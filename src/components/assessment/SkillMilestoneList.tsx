@@ -148,7 +148,7 @@ export const SkillMilestoneList = ({
             return (
               <Card 
                 key={milestone.milestone_id} 
-                className={`p-3 border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                className={`p-4 border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
                   isChecked ? 'shadow-sm' : 'shadow-soft'
                 }`}
                 style={{
@@ -156,12 +156,12 @@ export const SkillMilestoneList = ({
                 }}
                 onClick={() => handleToggle(milestone.milestone_id)}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <p className="text-xs text-foreground leading-relaxed font-medium">
+                    <p className="text-sm text-foreground leading-relaxed font-semibold">
                       {milestone.description || milestone.question}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1.5">
                       Usually seen between {Math.max(0, milestone.age - 1)}–{milestone.age + 1} months
                     </p>
                   </div>
@@ -172,7 +172,7 @@ export const SkillMilestoneList = ({
                       e.stopPropagation();
                       handleToggle(milestone.milestone_id);
                     }}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                       isChecked 
                         ? 'text-white shadow-md scale-105' 
                         : 'bg-muted/60 text-muted-foreground hover:bg-muted'
@@ -181,7 +181,7 @@ export const SkillMilestoneList = ({
                       backgroundColor: isChecked ? areaColor : undefined
                     }}
                   >
-                    <Check className="w-4 h-4" strokeWidth={isChecked ? 3 : 2} />
+                    <Check className="w-5 h-5" strokeWidth={isChecked ? 3 : 2} />
                   </button>
                 </div>
               </Card>
