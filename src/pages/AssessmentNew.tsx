@@ -531,6 +531,11 @@ const AssessmentNew = () => {
     const currentSkill = currentArea.skills[skillIndex];
     const areaColor = `hsl(var(--${getAreaColorVariable(currentArea.area_id)}))`;
 
+    // Calculate overall progress: 22% base + proportion through all skills * 78%
+    const totalSkills = areas.reduce((sum, a) => sum + a.skills.length, 0);
+    const completedSkills = areas.slice(0, areaIndex).reduce((sum, a) => sum + a.skills.length, 0) + skillIndex;
+    const overallProgress = 22 + (completedSkills / totalSkills) * 78;
+
     return (
       <SkillMilestoneList
         areaName={currentArea.area_name}
@@ -547,6 +552,7 @@ const AssessmentNew = () => {
         isLastSkill={skillIndex >= currentArea.skills.length - 1}
         babyName={baby?.name}
         babyAgeMonths={assessment?.reference_age_months}
+        overallProgress={overallProgress}
       />
     );
   }
