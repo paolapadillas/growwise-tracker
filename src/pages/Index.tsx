@@ -109,7 +109,7 @@ const Index = () => {
 
           {/* Social proof */}
           <p className="text-sm font-medium text-muted-foreground mb-4">
-            Join <span className="font-bold text-foreground">500,000+</span> parents who've already checked
+            Join <span className="font-bold text-foreground">10M+</span> parents who've already checked
           </p>
 
           {/* CTA */}
