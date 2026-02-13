@@ -2,12 +2,12 @@ import { Star } from "lucide-react";
 
 const testimonials = [
   {
-    quote: "This is an app every first-time mom should have. Beyond tracking my baby's milestones and getting daily activity suggestions, the real gem is the masterclasses. They truly guide you through learning to be a mom.",
-    name: "Victoria",
+    quote: "I was worried about my daughter's speech. The assessment showed me exactly where she stood compared to other kids her age and gave me clear next steps. Such a relief!",
+    name: "Sarah M.",
   },
   {
-    quote: "After using it for three months, I realized it's totally worth it. Live classes where experts share knowledge, data tracking from diapers to sleep patterns — it helps me stay organized and on top of everything!",
-    name: "Angela",
+    quote: "Within 2 minutes I had a full picture of my son's development. Turns out he was ahead in some areas I didn't expect. Every parent should do this.",
+    name: "Jessica R.",
   },
 ];
 
@@ -16,7 +16,7 @@ const SocialProofBlock = () => {
     <div className="bg-card border border-border rounded-2xl p-6 text-center w-full shadow-sm">
       {/* Header */}
       <p className="text-lg font-bold text-foreground mb-1">
-        You're in good company.
+        Parents love the results.
       </p>
       <p className="text-sm text-muted-foreground mb-5">
         Trusted by <span className="font-bold text-primary">10M+ families</span> worldwide
