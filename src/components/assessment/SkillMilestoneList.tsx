@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Check, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import kineduLogo from "@/assets/logo-kinedu-blue.png";
 
 interface Milestone {
   milestone_id: number;
@@ -29,6 +31,7 @@ interface SkillMilestoneListProps {
   isLastSkill: boolean;
   babyName?: string;
   babyAgeMonths?: number;
+  overallProgress?: number;
 }
 
 export const SkillMilestoneList = ({
@@ -46,6 +49,7 @@ export const SkillMilestoneList = ({
   isLastSkill,
   babyName,
   babyAgeMonths,
+  overallProgress,
 }: SkillMilestoneListProps) => {
   // Count checked (yes) milestones
   const checkedCount = milestones.filter(m => responses[m.milestone_id] === "yes").length;
@@ -63,6 +67,19 @@ export const SkillMilestoneList = ({
   return (
     <div className="min-h-screen bg-gradient-warm py-6 px-4">
       <div className="container max-w-2xl mx-auto">
+        {/* Global Progress Bar */}
+        {overallProgress !== undefined && (
+          <div className="mb-6">
+            <div className="flex justify-center mb-3">
+              <img src={kineduLogo} alt="Kinedu" className="h-7" />
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Your report</span>
+              <span className="text-xs font-bold text-primary">{Math.round(overallProgress)}% complete</span>
+            </div>
+            <Progress value={overallProgress} className="h-2.5 bg-muted/50" />
+          </div>
+        )}
         {/* Baby info - plain text */}
         {babyName && (
           <p className="text-center text-sm text-muted-foreground font-semibold mb-2">
