@@ -85,17 +85,19 @@ const Index = () => {
 
           {/* Hero photo with decorative elements */}
           <div className="flex justify-center mb-5">
-            <div className="relative">
+            <div className="relative py-4 px-6">
               {/* Decorative elements */}
-              <div className="absolute -top-3 -left-4 w-5 h-5 rounded-full border-2 border-orange-400 opacity-80" />
-              <div className="absolute -top-2 right--3 w-4 h-4 rounded-full bg-purple-500 opacity-70" />
-              <div className="absolute top-1/2 -right-6 w-8 h-3 rounded-sm bg-pink-400 opacity-60" />
-              <div className="absolute -bottom-2 -left-5 w-5 h-5 rounded-full bg-blue-500 opacity-70" />
-              <div className="absolute bottom-4 -right-4 text-green-500 text-xl font-bold opacity-70">+</div>
+              <div className="absolute top-0 left-2 w-7 h-7 rounded-full border-[3px] border-orange-400 opacity-80" />
+              <div className="absolute top-1 left-12 w-6 h-6 rounded-full bg-purple-500 opacity-70" />
+              <div className="absolute top-1/3 -right-2 w-12 h-4 rounded-md bg-pink-400 opacity-60" />
+              <div className="absolute bottom-2 left-4 w-7 h-7 rounded-full bg-blue-500 opacity-70" />
+              <div className="absolute bottom-1/4 -right-3 text-green-500 text-2xl font-bold opacity-70">+</div>
+              <div className="absolute top-1/2 -left-3 w-5 h-5 rounded-full bg-yellow-400 opacity-60" />
+              <div className="absolute bottom-0 right-6 w-4 h-4 rounded-full border-[2px] border-pink-400 opacity-60" />
               <img
                 src={heroBabyPhoto}
                 alt="Happy baby smiling"
-                className="w-40 md:w-48 h-56 md:h-72 rounded-full object-cover shadow-lg border-4 border-white"
+                className="relative z-10 w-40 md:w-48 h-56 md:h-72 rounded-[2.5rem] object-cover shadow-lg border-4 border-white"
               />
             </div>
           </div>
