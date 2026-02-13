@@ -131,26 +131,10 @@ export const SkillMilestoneList = ({
           </div>
         )}
 
-        {/* Progress dots */}
-        <div className="flex items-center justify-center gap-2 mb-3 px-1">
-          <span className="text-xs font-semibold" style={{ color: areaColor }}>
-            {checkedCount}/{milestones.length}
-          </span>
-          <div className="flex gap-1">
-            {milestones.map((m) => (
-              <div
-                key={m.milestone_id}
-                className="w-2 h-2 rounded-full transition-all"
-                style={{
-                  backgroundColor: responses[m.milestone_id] === "yes"
-                    ? areaColor 
-                    : 'hsl(var(--muted))',
-                  opacity: responses[m.milestone_id] === "yes" ? 1 : 0.35
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Instruction text */}
+        <p className="text-center text-sm text-muted-foreground mb-3 font-medium">
+          Check all the milestones baby can do
+        </p>
 
         {/* Milestones List */}
         <div className="space-y-3 mb-6">
