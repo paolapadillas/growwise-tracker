@@ -5,9 +5,11 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import kineduLogo from "@/assets/logo-kinedu-blue.png";
 import heroBabyPhoto from "@/assets/hero-baby-real.jpg";
+import reportPreview from "@/assets/report-preview-blurred.png";
 import { getSessionId } from "@/hooks/useSessionId";
 import SocialProofBlock from "@/components/SocialProofBlock";
 import WhyTrustUs from "@/components/WhyTrustUs";
+import AcademicLogosBar from "@/components/AcademicLogosBar";
 
 const ageRanges = [
   { label: "0–3 months", value: "0-3" },
@@ -76,17 +78,17 @@ const Index = () => {
             <img src={kineduLogo} alt="Kinedu" className="h-10 md:h-12" />
           </div>
 
-          {/* Headline */}
+          {/* Emotional headline — message match with ad */}
           <h1 className="text-2xl md:text-3xl font-bold text-primary mb-4">
-            Is your baby on track?
+            Feel unsure about your baby's development?
           </h1>
 
-          {/* Hero photo — swap this with your ad-matching baby photo */}
+          {/* Hero photo — full-width, natural feel */}
           <div className="flex justify-center mb-5">
             <img
               src={heroBabyPhoto}
               alt="Happy baby smiling"
-              className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shadow-lg"
+              className="w-full max-w-sm h-56 md:h-64 rounded-2xl object-cover shadow-lg"
             />
           </div>
 
@@ -116,7 +118,7 @@ const Index = () => {
           )}
 
           {/* Trust bar */}
-          <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground mb-6">
+          <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground mb-4">
             <span className="flex items-center gap-1">
               <Timer className="w-3.5 h-3.5 text-primary" />
               2 min
@@ -132,6 +134,9 @@ const Index = () => {
               Stanford-backed
             </span>
           </div>
+
+          {/* Compact academic logos — above the fold */}
+          <AcademicLogosBar />
 
           {/* Inline Age Selector — "Foot in the Door" */}
           {showAgeSelector && (
@@ -159,6 +164,35 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Report Preview — curiosity trigger */}
+      <section className="container mx-auto px-4 pb-8 md:pb-12">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-sm font-semibold text-foreground mb-3">
+            Here's a sneak peek of your report
+          </p>
+          <div className="relative rounded-2xl overflow-hidden shadow-md border border-border">
+            <img
+              src={reportPreview}
+              alt="Sample development report preview"
+              className="w-full object-cover blur-[2px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/90 flex items-end justify-center pb-6">
+              <Button
+                variant="success"
+                size="lg"
+                className="rounded-full px-8 shadow-lg"
+                onClick={handleCtaClick}
+              >
+                <span className="flex items-center gap-2">
+                  Unlock Your Report
+                  <ArrowRight className="w-4 h-4" strokeWidth={3} />
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Social Proof Block */}
       <section className="container mx-auto px-4 pb-8 md:pb-12">
         <div className="max-w-lg mx-auto">
@@ -173,7 +207,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Simplified Bottom CTA */}
+      {/* Bottom CTA — different angle */}
       <section className="container mx-auto px-4 pb-8 md:pb-12">
         <div className="max-w-lg mx-auto text-center">
           <p className="text-sm font-medium text-muted-foreground mb-4">
@@ -186,7 +220,7 @@ const Index = () => {
             onClick={() => trackAndNavigate('cta_bottom')}
           >
             <span className="flex items-center gap-2">
-              Start Assessment — It's Free
+              Get Your Free Report Now
               <ArrowRight className="w-5 h-5" strokeWidth={3} />
             </span>
           </Button>
@@ -204,14 +238,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Minimal Footer — compliance only */}
       <footer className="border-t border-border">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <a href="https://app.kinedu.com/about-copy2/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">About Kinedu</a>
-              <a href="https://app.kinedu.com/science/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Science Behind Kinedu</a>
-            </div>
             <div className="flex items-center gap-4">
               <a href="https://blog.kinedu.com/privacy-policy-2/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Privacy Policy</a>
               <a href="https://blog.kinedu.com/privacy-policy/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Terms</a>
