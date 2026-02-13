@@ -28,6 +28,27 @@ const BabyForm = () => {
   });
   const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
 
+  // Pre-fill birth date from age_range query param (foot-in-the-door from landing)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ageRange = params.get('age_range');
+    if (ageRange && !birthDate) {
+      const today = new Date();
+      let monthsBack = 0;
+      if (ageRange === '0-3') monthsBack = 1;
+      else if (ageRange === '4-6') monthsBack = 5;
+      else if (ageRange === '7-9') monthsBack = 8;
+      else if (ageRange === '10-12') monthsBack = 11;
+      else if (ageRange === '12-24') monthsBack = 18;
+      else if (ageRange === '24-36') monthsBack = 30;
+      else if (ageRange === '36+') monthsBack = 42;
+      if (monthsBack > 0) {
+        const approxDate = new Date(today.getFullYear(), today.getMonth() - monthsBack, today.getDate());
+        setBirthDate(approxDate);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     checkAuth();
   }, []);
