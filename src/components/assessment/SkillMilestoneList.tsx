@@ -82,38 +82,22 @@ export const SkillMilestoneList = ({
         )}
 
         {/* Combined Area Header Card */}
-        <div 
-          className="rounded-2xl p-4 mb-4"
-          style={{ backgroundColor: `hsl(var(--${areaName === 'Cognitive' ? 'cognitive' : areaName === 'Physical' ? 'physical' : areaName === 'Linguistic' ? 'linguistic' : 'emotional'}) / 0.08)` }}
-        >
-          {/* Baby info */}
-          {babyName && (
-            <p className="text-center text-xs text-muted-foreground font-medium mb-2">
-              {babyName} • {babyAgeMonths} {babyAgeMonths === 1 ? 'month' : 'months'}
-            </p>
-          )}
+        <div className="mb-4">
+          {/* Baby info + Area - gray text */}
+          <p className="text-center text-xs text-muted-foreground font-medium mb-1">
+            {babyName || 'Baby'} • {babyAgeMonths} {babyAgeMonths === 1 ? 'month' : 'months'}
+          </p>
+          <p className="text-center text-xs text-muted-foreground mb-3">
+            {areaName} Area
+          </p>
 
-          {/* Area + Skill info */}
-          <div className="flex items-center justify-center gap-2.5 mb-3">
-            <img src={areaIcon} alt={areaName} className="w-9 h-9 object-contain" />
-            <div>
-              <h2 className="text-base font-bold leading-tight" style={{ color: areaColor }}>
-                {areaName}
-              </h2>
-              <p className="text-[11px] text-muted-foreground">
-                Skill {skillNumber} of {totalSkills}
-              </p>
-            </div>
+          {/* Skill Name with icon */}
+          <div className="flex items-center justify-center gap-2.5">
+            <img src={areaIcon} alt={areaName} className="w-8 h-8 object-contain" />
+            <h1 className="text-lg font-bold" style={{ color: areaColor }}>
+              {skillName}
+            </h1>
           </div>
-
-          {/* Skill Name */}
-          <h1 className="text-xl font-bold text-center mb-1" style={{ color: areaColor }}>
-            {skillName}
-          </h1>
-          <div 
-            className="w-14 h-0.5 mx-auto rounded-full opacity-30"
-            style={{ backgroundColor: areaColor }}
-          />
         </div>
 
         {/* Go to Last Skill */}
@@ -133,7 +117,7 @@ export const SkillMilestoneList = ({
 
         {/* Instruction text */}
         <p className="text-center text-sm text-muted-foreground mb-3 font-medium">
-          Check all the milestones baby can do
+          Check all the milestones {babyName || 'baby'} can do
         </p>
 
         {/* Milestones List */}
