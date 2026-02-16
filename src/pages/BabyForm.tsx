@@ -214,7 +214,7 @@ const BabyForm = () => {
             />
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-primary text-center block">Your email</Label>
+              <Label className="text-sm font-medium text-primary text-center block">Your email (optional)</Label>
               <Input
                 type="email"
                 placeholder="parent@email.com"
