@@ -118,32 +118,34 @@ export const AreaSummary = ({
           </p>
         )}
 
-        {/* Header Card */}
-        <div 
-          className="rounded-2xl p-3 mb-4"
-          style={{ backgroundColor: `${areaColor}10` }}
-        >
+        {/* Header Card - matching skill card style */}
+        <Card className="p-4 mb-4 border-0 shadow-soft overflow-hidden relative">
+          {/* Decorative accent bar like skill cards */}
+          <div 
+            className="absolute top-0 left-0 w-1 h-full"
+            style={{ backgroundColor: areaColor }}
+          />
           <div className="flex items-center justify-center gap-3">
             <div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: `${areaColor}15` }}
             >
               <img 
                 src={areaIcon} 
                 alt={areaName} 
-                className="w-7 h-7 object-contain"
+                className="w-8 h-8 object-contain"
               />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight" style={{ color: areaColor }}>
                 {areaName}
               </h1>
-              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">
                 Summary
               </p>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Pace of Development subtitle with info */}
         <div className="flex items-center justify-center gap-2 mb-4">
