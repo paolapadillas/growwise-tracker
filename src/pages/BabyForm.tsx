@@ -238,7 +238,7 @@ const BabyForm = () => {
         {step === 2 && !showMotivation && (
           <div className="animate-fade-in space-y-8">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 When is {displayName}'s birthday?
               </h1>
             </div>
@@ -362,7 +362,7 @@ const BabyForm = () => {
         {step === 3 && !showMotivation && (
           <div className="animate-fade-in space-y-8">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 What should we focus on for {displayName}?
               </h1>
               <p className="text-sm text-muted-foreground">Pick one or more developmental areas</p>
