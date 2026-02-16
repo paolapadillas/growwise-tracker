@@ -347,7 +347,7 @@ const Report = () => {
           ) : emailUnlocked ? (
             <>
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                {babyName}'s full report is ready! 🎊
+                {babyName}'s full report is ready!
               </h1>
               <p className="text-muted-foreground flex items-center justify-center gap-1.5">
                 <Mail className="w-4 h-4" /> We've also emailed you the results
@@ -384,7 +384,7 @@ const Report = () => {
                   <span className="font-bold text-sm text-foreground">{area.area_name}</span>
                 </div>
                 <div className="text-3xl font-bold mb-1" style={{ color }}>
-                  {area.avgScore}%
+                  {area.pace.toFixed(1)}x
                 </div>
                 <div className="text-xs font-medium mb-2" style={{ color: getPaceColor(area.pace) }}>
                   {getPaceLabel(area.pace)}
