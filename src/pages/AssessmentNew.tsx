@@ -451,6 +451,48 @@ const AssessmentNew = () => {
     }
   };
 
+  // Handle skip entire area
+  const handleSkipArea = async () => {
+    if (viewState.type !== 'skill') return;
+    const { areaIndex } = viewState;
+    const currentArea = areas[areaIndex];
+
+    // Mark all unanswered milestones in all skills of this area as "no"
+    const newResponses = { ...responses };
+    const batchInserts: any[] = [];
+    currentArea.skills.forEach(skill => {
+      skill.milestones.forEach(m => {
+        if (!newResponses[m.milestone_id]) {
+          newResponses[m.milestone_id] = 'no';
+          batchInserts.push({
+            assessment_id: id,
+            milestone_id: m.milestone_id,
+            answer: 'no',
+            skill_id: m.skill_id,
+            area_id: m.area_id,
+            source: 'skipped'
+          });
+        }
+      });
+    });
+
+    if (batchInserts.length > 0) {
+      setResponses(newResponses);
+      try {
+        await supabase
+          .from("assessment_responses")
+          .upsert(batchInserts, { onConflict: 'assessment_id,milestone_id' });
+      } catch (error) {
+        console.error('Error saving skipped responses:', error);
+      }
+    }
+
+    // Calculate scores and go to area summary
+    await calculateSkillScores(areaIndex);
+    setViewState({ type: 'areaSummary', areaIndex });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Handle go to previous skill (last answered skill)
   const handleGoToLastSkill = () => {
     if (viewState.type !== 'skill') return;
@@ -562,6 +604,7 @@ const AssessmentNew = () => {
         onResponse={handleResponse}
         onNextSkill={handleNextSkill}
         onGoToLastSkill={handleGoToLastSkill}
+        onSkipArea={handleSkipArea}
         isLastSkill={skillIndex >= currentArea.skills.length - 1}
         babyName={baby?.name}
         babyAgeMonths={assessment?.reference_age_months}
