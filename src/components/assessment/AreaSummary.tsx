@@ -113,33 +113,41 @@ export const AreaSummary = ({
       <div className="container max-w-2xl mx-auto">
         {/* Baby Info */}
         {babyName && (
-          <p className="text-center text-sm text-muted-foreground font-semibold mb-4">
+          <p className="text-center text-xs text-muted-foreground font-medium mb-2">
             {babyName} • {babyAgeMonths} {babyAgeMonths === 1 ? 'month' : 'months'}
           </p>
         )}
 
-        {/* Header */}
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <div 
-            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md bg-white"
-          >
-            <img 
-              src={areaIcon} 
-              alt={areaName} 
-              className="w-9 h-9 object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: areaColor }}>
-              {areaName}
-            </h1>
-            <p className="text-sm text-muted-foreground font-medium">Summary</p>
+        {/* Header Card */}
+        <div 
+          className="rounded-2xl p-5 mb-6"
+          style={{ backgroundColor: `${areaColor}10` }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm"
+              style={{ backgroundColor: `${areaColor}15` }}
+            >
+              <img 
+                src={areaIcon} 
+                alt={areaName} 
+                className="w-10 h-10 object-contain"
+              />
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: areaColor }}>
+                {areaName}
+              </h1>
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest mt-0.5">
+                Summary
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Pace of Development subtitle with info */}
         <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-sm font-medium text-muted-foreground">
+          <span className="text-sm font-semibold text-foreground/70">
             Pace of Development
           </span>
           {isMobile ? (
