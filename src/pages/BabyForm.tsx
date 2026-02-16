@@ -42,7 +42,6 @@ const BabyForm = () => {
   const [birthDay, setBirthDay] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [gestationalWeeks, setGestationalWeeks] = useState("40");
-  const [showMotivation, setShowMotivation] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState<number[]>([2, 1, 3, 4]); // All selected by default
 
   const areaOptions = [
@@ -107,70 +106,63 @@ const BabyForm = () => {
       return;
     }
     
-    // Show motivational transition first
-    setShowMotivation(true);
-    
-    // Wait for animation, then proceed
-    setTimeout(async () => {
-      setLoading(true);
+    setLoading(true);
 
-      try {
-        await supabase.from('page_events').insert({
-          event_type: 'profile_continue_clicked',
-          event_data: { source: 'baby_form' },
-          user_agent: navigator.userAgent,
-          session_id: getSessionId()
-        });
-      } catch (err) {
-        console.error('Tracking error:', err);
+    try {
+      await supabase.from('page_events').insert({
+        event_type: 'profile_continue_clicked',
+        event_data: { source: 'baby_form' },
+        user_agent: navigator.userAgent,
+        session_id: getSessionId()
+      });
+    } catch (err) {
+      console.error('Tracking error:', err);
+    }
+
+    try {
+      const birthDateStr = format(birthDate, "yyyy-MM-dd");
+      const { data: baby, error: babyError } = await supabase
+        .from("babies")
+        .insert({
+          name: babyName || "Baby",
+          birthdate: birthDateStr,
+          gestational_weeks: parseInt(gestationalWeeks),
+          user_id: userId,
+        })
+        .select()
+        .single();
+      if (babyError) throw babyError;
+
+      const babyBirthDate = new Date(baby.birthdate);
+      const today = new Date();
+      const chronologicalMonths = differenceInMonths(today, babyBirthDate);
+      let referenceAgeMonths = chronologicalMonths;
+      if (baby.gestational_weeks && baby.gestational_weeks < 37) {
+        const correctionWeeks = 40 - baby.gestational_weeks;
+        const correctionMonths = Math.round(correctionWeeks / 4.33);
+        referenceAgeMonths = Math.max(0, chronologicalMonths - correctionMonths);
       }
 
-      try {
-        const birthDateStr = format(birthDate, "yyyy-MM-dd");
-        const { data: baby, error: babyError } = await supabase
-          .from("babies")
-          .insert({
-            name: babyName || "Baby",
-            birthdate: birthDateStr,
-            gestational_weeks: parseInt(gestationalWeeks),
-            user_id: userId,
-          })
-          .select()
-          .single();
-        if (babyError) throw babyError;
+      const { data: assessment, error: assessmentError } = await supabase
+        .from("assessments")
+        .insert({
+          baby_id: baby.id,
+          reference_age_months: referenceAgeMonths,
+          locale: "en",
+        })
+        .select()
+        .single();
+      if (assessmentError) throw assessmentError;
 
-        const babyBirthDate = new Date(baby.birthdate);
-        const today = new Date();
-        const chronologicalMonths = differenceInMonths(today, babyBirthDate);
-        let referenceAgeMonths = chronologicalMonths;
-        if (baby.gestational_weeks && baby.gestational_weeks < 37) {
-          const correctionWeeks = 40 - baby.gestational_weeks;
-          const correctionMonths = Math.round(correctionWeeks / 4.33);
-          referenceAgeMonths = Math.max(0, chronologicalMonths - correctionMonths);
-        }
-
-        const { data: assessment, error: assessmentError } = await supabase
-          .from("assessments")
-          .insert({
-            baby_id: baby.id,
-            reference_age_months: referenceAgeMonths,
-            locale: "en",
-          })
-          .select()
-          .single();
-        if (assessmentError) throw assessmentError;
-
-        // Store selected areas for the assessment
-        localStorage.setItem(`assessment_areas_${assessment.id}`, JSON.stringify(selectedAreas));
-        navigate(`/assessment/${assessment.id}`);
-      } catch (error: any) {
-        console.error("Error creating baby:", error);
-        toast.error(error.message || "Failed to start assessment");
-        setShowMotivation(false);
-      } finally {
-        setLoading(false);
-      }
-    }, 1800);
+      // Store selected areas for the assessment
+      localStorage.setItem(`assessment_areas_${assessment.id}`, JSON.stringify(selectedAreas));
+      navigate(`/assessment/${assessment.id}`);
+    } catch (error: any) {
+      console.error("Error creating baby:", error);
+      toast.error(error.message || "Failed to start assessment");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const correctedAge = calculateCorrectedAge();
@@ -197,28 +189,8 @@ const BabyForm = () => {
           <Progress value={progressValue} className="h-2.5 bg-muted/50" />
         </div>
 
-        {/* Motivational transition */}
-        {showMotivation && (
-          <div className="animate-fade-in flex flex-col items-center justify-center py-20 space-y-6">
-            <div className="relative flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-9 h-9 text-primary animate-pulse" />
-              </div>
-              <div className="absolute inset-0 w-20 h-20 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" style={{ animationDuration: '1.2s' }} />
-            </div>
-            <div className="space-y-2 text-center">
-              <p className="text-xl font-bold text-primary">
-                {babyName ? `Personalizing ${babyName}'s assessment` : "Personalizing your assessment"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Building milestones based on age & selected areas…
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Step 1: Baby's Name */}
-        {step === 1 && !showMotivation && (
+        {step === 1 && !loading && (
           <div className="animate-fade-in space-y-8">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-primary mb-2">What's your baby's name?</h1>
@@ -245,7 +217,7 @@ const BabyForm = () => {
         )}
 
         {/* Step 2: Birthday + Premature */}
-        {step === 2 && !showMotivation && (
+        {step === 2 && !loading && (
           <div className="animate-fade-in space-y-8">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-primary mb-2">
@@ -369,7 +341,7 @@ const BabyForm = () => {
         )}
 
         {/* Step 3: Area Selection */}
-        {step === 3 && !showMotivation && (
+        {step === 3 && !loading && (
           <div className="animate-fade-in space-y-8">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-primary mb-2">
