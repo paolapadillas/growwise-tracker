@@ -199,11 +199,21 @@ const BabyForm = () => {
 
         {/* Motivational transition */}
         {showMotivation && (
-          <div className="animate-fade-in flex flex-col items-center justify-center py-16 space-y-4">
-            <Sparkles className="w-10 h-10 text-primary animate-pulse" />
-            <p className="text-lg font-semibold text-foreground text-center">
-              Great! We'll personalize {babyName ? `${babyName}'s` : "the"} assessment ✨
-            </p>
+          <div className="animate-fade-in flex flex-col items-center justify-center py-20 space-y-6">
+            <div className="relative flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-9 h-9 text-primary animate-pulse" />
+              </div>
+              <div className="absolute inset-0 w-20 h-20 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" style={{ animationDuration: '1.2s' }} />
+            </div>
+            <div className="space-y-2 text-center">
+              <p className="text-xl font-bold text-primary">
+                {babyName ? `Personalizing ${babyName}'s assessment` : "Personalizing your assessment"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Building milestones based on age & selected areas…
+              </p>
+            </div>
           </div>
         )}
 
