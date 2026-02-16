@@ -66,7 +66,7 @@ const Index = () => {
               <img
                 src={heroBabyPhoto}
                 alt="Happy baby smiling"
-                className="relative z-10 w-40 md:w-48 h-56 md:h-72 rounded-[2.5rem] object-cover shadow-lg border-4 border-white"
+                className="relative z-10 w-44 md:w-52 h-60 md:h-80 rounded-[2.5rem] object-cover shadow-lg border-4 border-white"
               />
             </div>
           </div>
