@@ -190,15 +190,10 @@ export const AreaSummary = ({
                 className="py-3"
                 style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.4)' : 'none' }}
               >
-                {/* Skill name + pace value */}
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm font-bold" style={{ color: areaColor }}>
-                    {skill.skill_name}
-                  </h3>
-                  <span className="text-lg font-extrabold" style={{ color: areaColor }}>
-                    {pace.toFixed(1)}×
-                  </span>
-                </div>
+                {/* Skill name */}
+                <h3 className="text-sm font-bold mb-1" style={{ color: areaColor }}>
+                  {skill.skill_name}
+                </h3>
 
                 {/* Compact gauge */}
                 <PaceGauge
