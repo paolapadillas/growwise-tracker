@@ -323,10 +323,10 @@ const Report = () => {
     return `${name} is building up — keep practicing!`;
   };
 
-  const getPaceColor = (pace: number) => {
+  const getPaceColor = (pace: number, areaColor?: string) => {
     if (pace >= 1.8) return 'hsl(145, 60%, 45%)';
-    if (pace >= 1.2) return 'hsl(32, 98%, 56%)';
-    if (pace >= 0.2) return 'hsl(220, 10%, 40%)';
+    if (pace >= 1.2) return areaColor || 'hsl(32, 98%, 56%)';
+    if (pace >= 0.2) return areaColor || 'hsl(220, 10%, 40%)';
     return 'hsl(0, 70%, 55%)';
   };
 
@@ -421,7 +421,7 @@ const Report = () => {
                 <div className="text-3xl font-bold mb-0.5 text-center" style={{ color }}>
                   {area.pace.toFixed(1)}x
                 </div>
-                <div className="text-xs font-semibold mb-2 text-center" style={{ color: getPaceColor(area.pace) }}>
+                <div className="text-xs font-semibold mb-2 text-center" style={{ color: getPaceColor(area.pace, color) }}>
                   {getPaceLabel(area.pace, babyName)}
                 </div>
                 <PaceGauge
