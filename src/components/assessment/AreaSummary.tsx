@@ -224,8 +224,8 @@ export const AreaSummary = ({
           const avgPercentile = validSkills.length > 0 ? validSkills.reduce((sum, s) => sum + (s.percentile ?? 0), 0) / validSkills.length : 50;
           const feedback = getAreaFeedback(avgPercentile, babyName || 'Your baby', areaColor);
           return (
-            <div className="mb-5 px-1">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="bg-muted/40 rounded-xl p-5 mb-5 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Pace of Development
                 </span>
@@ -257,12 +257,9 @@ export const AreaSummary = ({
                   </TooltipProvider>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <span style={{ color: feedback.color }}>{feedback.icon}</span>
-                <span className="text-lg font-bold" style={{ color: feedback.color }}>
-                  {feedback.text}
-                </span>
-              </div>
+              <p className="text-xl font-bold leading-tight" style={{ color: feedback.color }}>
+                {feedback.text}
+              </p>
             </div>
           );
         })()}
