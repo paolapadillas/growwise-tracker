@@ -371,7 +371,7 @@ const Report = () => {
           </div>
           {hasEmail && !emailUnlocked ? (
             <>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 Great job completing {babyName}'s assessment!
               </h1>
               <p className="text-muted-foreground flex items-center justify-center gap-1.5">
@@ -380,7 +380,7 @@ const Report = () => {
             </>
           ) : emailUnlocked ? (
             <>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 {babyName}'s full report is ready!
               </h1>
               <p className="text-muted-foreground flex items-center justify-center gap-1.5">
@@ -389,7 +389,7 @@ const Report = () => {
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 {babyName}'s assessment is complete!
               </h1>
               <p className="text-muted-foreground">
