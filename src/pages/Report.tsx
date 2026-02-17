@@ -325,7 +325,8 @@ const Report = () => {
 
   const getPaceColor = (pace: number) => {
     if (pace >= 1.8) return 'hsl(145, 60%, 45%)';
-    if (pace >= 0.2) return 'hsl(40, 90%, 50%)';
+    if (pace >= 1.2) return 'hsl(32, 98%, 56%)';
+    if (pace >= 0.2) return 'hsl(220, 10%, 40%)';
     return 'hsl(0, 70%, 55%)';
   };
 
