@@ -4,7 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Clock, MousePointer, Download, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { 
+  Loader2, CheckCircle, XCircle, Clock, MousePointer, Download, 
+  ExternalLink, ChevronDown, ChevronUp, Smartphone, Monitor, Tablet,
+  MessageSquare, HelpCircle, ArrowLeft, SkipForward, Eye, LogOut,
+  Play, BarChart3, Timer, Target, FileText, Zap
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { externalSupabase } from '@/integrations/supabase/external-client';
 import { format } from 'date-fns';
@@ -16,17 +23,30 @@ interface AssessmentBreakdownDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface MilestoneDetail {
+  milestone_id: number;
+  question: string;
+  skill_name: string;
+  area_name: string;
+  answer: string | null;
+  time_to_answer_ms: number | null;
+  created_at: string | null;
+}
+
+interface SkillBreakdown {
+  skill_id: number;
+  skill_name: string;
+  total_questions: number;
+  answered: number;
+  mastered: number;
+  completed: boolean;
+  milestones: MilestoneDetail[];
+}
+
 interface AreaBreakdown {
   area_id: number;
   area_name: string;
-  skills: {
-    skill_id: number;
-    skill_name: string;
-    total_questions: number;
-    answered: number;
-    mastered: number;
-    completed: boolean;
-  }[];
+  skills: SkillBreakdown[];
   total_questions: number;
   answered: number;
   completion_percentage: number;
@@ -34,64 +54,33 @@ interface AreaBreakdown {
   abandoned: boolean;
 }
 
-interface LastActivity {
+interface TimelineEvent {
+  id: string;
   event_type: string;
-  area_id: number | null;
-  skill_id: number | null;
-  milestone_id: number | null;
-  question_index: number | null;
   created_at: string;
+  relative_time: string;
+  label: string;
+  detail: string | null;
+  icon: string;
+  color: string;
 }
 
-interface ReportActions {
-  downloaded: boolean;
+interface KPIData {
+  progress: { answered: number; total: number; percentage: number };
+  duration: string;
+  avgTimePerQuestion: string;
+  skillsCompleted: { done: number; total: number };
+  sawReport: boolean;
   ctaClicked: boolean;
-  kineduDownloadClicked: boolean;
-}
-
-interface LastResponse {
-  area_id: number | null;
-  skill_id: number | null;
-  milestone_id: number | null;
-  answer: string;
-  created_at: string;
-}
-
-interface LastView {
-  type: 'question' | 'report';
-  event_type: string;
-  area_id: number | null;
-  skill_id: number | null;
-  milestone_id: number | null;
-  question_index: number | null;
-  created_at: string;
-}
-
-interface AbandonmentInfo {
-  isAbandoned: boolean;
+  isCompleted: boolean;
   completedAt: string | null;
   abandonedArea: string | null;
   abandonedSkill: string | null;
-  lastQuestionIndex: number | null;
-  totalDuration: string | null;
-  totalResponses: number;
-  sawReport: boolean;
-  sawUnlockReport: boolean;
-  // New fields for remaining questions
-  totalExpectedMilestones: number;
-  remainingMilestones: number;
-  totalExpectedSkills: number;
-  skillsAnswered: number;
-  remainingSkills: number;
 }
 
-interface TimingMetrics {
-  avgTimePerQuestion: number | null;  // en ms
-  totalAssessmentTime: number | null; // en ms
-  timeOnReportPage: number | null;    // en ms
-  totalQuestions: number;
-  firstReportViewAt: string | null;
-  lastEventAt: string | null;
+interface DeviceInfo {
+  type: 'mobile' | 'desktop' | 'tablet';
+  userAgent: string;
 }
 
 export function AssessmentBreakdownDialog({ 
@@ -102,329 +91,334 @@ export function AssessmentBreakdownDialog({
 }: AssessmentBreakdownDialogProps) {
   const [loading, setLoading] = useState(true);
   const [areaBreakdown, setAreaBreakdown] = useState<AreaBreakdown[]>([]);
-  const [lastActivity, setLastActivity] = useState<LastActivity | null>(null);
-  const [reportActions, setReportActions] = useState<ReportActions>({ 
-    downloaded: false, 
-    ctaClicked: false,
-    kineduDownloadClicked: false
-  });
-  const [lastResponse, setLastResponse] = useState<LastResponse | null>(null);
-  const [lastView, setLastView] = useState<LastView | null>(null);
-  const [abandonmentInfo, setAbandonmentInfo] = useState<AbandonmentInfo | null>(null);
-  const [timingMetrics, setTimingMetrics] = useState<TimingMetrics | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [kpi, setKpi] = useState<KPIData | null>(null);
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [reportActions, setReportActions] = useState({ downloaded: false, ctaClicked: false, kineduDownloadClicked: false });
 
   const areaNames: Record<number, string> = {
-    1: 'Physical',
-    2: 'Cognitive', 
-    3: 'Linguistic',
-    4: 'Socio-Emotional'
+    1: 'Physical', 2: 'Cognitive', 3: 'Linguistic', 4: 'Socio-Emotional'
   };
-
   const areaColors: Record<number, string> = {
-    1: 'bg-blue-500',
-    2: 'bg-green-500',
-    3: 'bg-orange-500',
-    4: 'bg-pink-500'
+    1: 'bg-blue-500', 2: 'bg-green-500', 3: 'bg-orange-500', 4: 'bg-pink-500'
   };
 
   useEffect(() => {
-    if (open && assessmentId) {
-      loadBreakdown();
-    }
+    if (open && assessmentId) loadBreakdown();
   }, [open, assessmentId]);
+
+  function parseDevice(ua: string): DeviceInfo {
+    const lower = ua.toLowerCase();
+    if (/ipad|tablet|kindle|playbook/i.test(lower) || (/android/i.test(lower) && !/mobile/i.test(lower))) {
+      return { type: 'tablet', userAgent: ua };
+    }
+    if (/mobile|iphone|ipod|android.*mobile|blackberry|opera mini|iemobile/i.test(lower)) {
+      return { type: 'mobile', userAgent: ua };
+    }
+    return { type: 'desktop', userAgent: ua };
+  }
+
+  function formatRelativeTime(eventTime: string, startTime: string): string {
+    const diff = new Date(eventTime).getTime() - new Date(startTime).getTime();
+    if (diff < 0) return '0s';
+    const totalSec = Math.floor(diff / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    if (min === 0) return `+${sec}s`;
+    return `+${min}m ${sec}s`;
+  }
+
+  function formatDuration(ms: number | null): string {
+    if (!ms) return 'N/A';
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    if (minutes === 0) return `${seconds}s`;
+    return `${minutes}m ${seconds % 60}s`;
+  }
+
+  function getEventIcon(type: string): string {
+    const map: Record<string, string> = {
+      'question_view': 'eye', 'answer': 'message', 'helper_open': 'help',
+      'back': 'back', 'skip': 'skip', 'report_view': 'report',
+      'unlock_report_view': 'report', 'cta_clicked': 'zap', 
+      'kinedu_download_clicked': 'download', 'report_downloaded': 'download',
+      'exit': 'exit', 'question_duration': 'timer'
+    };
+    return map[type] || 'default';
+  }
+
+  function getEventColor(type: string): string {
+    const map: Record<string, string> = {
+      'answer': 'text-green-600', 'exit': 'text-red-600', 'helper_open': 'text-amber-600',
+      'back': 'text-orange-500', 'skip': 'text-orange-500', 'report_view': 'text-purple-600',
+      'unlock_report_view': 'text-purple-600', 'cta_clicked': 'text-blue-600',
+      'kinedu_download_clicked': 'text-blue-600', 'report_downloaded': 'text-blue-600'
+    };
+    return map[type] || 'text-muted-foreground';
+  }
 
   const loadBreakdown = async () => {
     if (!assessmentId) return;
-    
     setLoading(true);
     try {
-      // Fetch assessment details for completion status
-      const { data: assessmentData } = await supabase
-        .from('assessments')
-        .select('completed_at, started_at, reference_age_months')
-        .eq('id', assessmentId)
-        .maybeSingle();
+      // Parallel fetches
+      const [assessmentRes, responsesRes, allEventsRes] = await Promise.all([
+        supabase.from('assessments').select('completed_at, started_at, reference_age_months').eq('id', assessmentId).maybeSingle(),
+        supabase.from('assessment_responses').select('area_id, skill_id, milestone_id, answer, created_at').eq('assessment_id', assessmentId).order('created_at', { ascending: true }),
+        supabase.from('assessment_events').select('id, event_type, area_id, skill_id, milestone_id, question_index, created_at, event_data, user_agent').eq('assessment_id', assessmentId).order('created_at', { ascending: true })
+      ]);
 
-      // Fetch total expected milestones for this age
+      const assessmentData = assessmentRes.data;
+      const responses = responsesRes.data || [];
+      const allEvents = allEventsRes.data || [];
+
+      // Device info from first event with user_agent
+      const firstWithUA = allEvents.find(e => e.user_agent);
+      if (firstWithUA?.user_agent) {
+        setDeviceInfo(parseDevice(firstWithUA.user_agent));
+      }
+
+      // Get total expected milestones
       let totalExpectedMilestones = 0;
       let totalExpectedSkills = 0;
       if (assessmentData?.reference_age_months !== undefined) {
         const { data: milestonesForAge } = await supabase
-          .from('milestones')
-          .select('milestone_id, skill_id')
-          .lte('age', assessmentData.reference_age_months)
-          .eq('locale', 'en');
-        
+          .from('milestones').select('milestone_id, skill_id')
+          .lte('age', assessmentData.reference_age_months).eq('locale', 'en');
         if (milestonesForAge) {
           totalExpectedMilestones = milestonesForAge.length;
-          const uniqueSkills = new Set(milestonesForAge.map(m => m.skill_id));
-          totalExpectedSkills = uniqueSkills.size;
+          totalExpectedSkills = new Set(milestonesForAge.map(m => m.skill_id)).size;
         }
       }
 
-      // Fetch responses grouped by area and skill, ordered by time to detect response order
-      const { data: responses, error: responsesError } = await supabase
-        .from('assessment_responses')
-        .select('area_id, skill_id, milestone_id, answer, created_at')
-        .eq('assessment_id', assessmentId)
-        .order('created_at', { ascending: true });
-
-      if (responsesError) throw responsesError;
-
-      // Fetch events to get last activity
-      const { data: events, error: eventsError } = await supabase
-        .from('assessment_events')
-        .select('event_type, area_id, skill_id, milestone_id, question_index, created_at')
-        .eq('assessment_id', assessmentId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (eventsError) throw eventsError;
-
-      if (events && events.length > 0) {
-        setLastActivity(events[0]);
-      }
-
-      // Fetch all events for timing calculations and report actions
-      const { data: allEvents } = await supabase
-        .from('assessment_events')
-        .select('event_type, event_data, created_at')
-        .eq('assessment_id', assessmentId)
-        .order('created_at', { ascending: true });
-
-      const downloaded = allEvents?.some(e => e.event_type === 'report_downloaded') || false;
-      const ctaClicked = allEvents?.some(e => e.event_type === 'cta_clicked') || false;
-      const kineduDownloadClicked = allEvents?.some(e => e.event_type === 'kinedu_download_clicked') || false;
+      // Fetch milestone details (question text) from external supabase
+      const milestoneIds = [...new Set(responses.map(r => r.milestone_id))];
+      const skillIds = [...new Set(responses.map(r => r.skill_id).filter(Boolean) as number[])];
       
-      setReportActions({ downloaded, ctaClicked, kineduDownloadClicked });
-
-      // Calculate timing metrics
-      // 1. Average time per question from answer events
-      const answerEvents = allEvents?.filter(e => {
-        if (e.event_type !== 'answer' || !e.event_data) return false;
-        const data = e.event_data as any;
-        return typeof data.time_to_answer_ms === 'number';
-      }) || [];
-
-      const avgTimePerQuestion = answerEvents.length > 0
-        ? answerEvents.reduce((sum, e) => {
-            const data = e.event_data as any;
-            return sum + (data.time_to_answer_ms || 0);
-          }, 0) / answerEvents.length
-        : null;
-
-      // 2. Time on report page (from first report_view to last event)
-      const firstReportView = allEvents?.find(e => e.event_type === 'report_view');
-      const lastEvent = allEvents && allEvents.length > 0 ? allEvents[allEvents.length - 1] : null;
-
-      let timeOnReportPage: number | null = null;
-      if (firstReportView && lastEvent) {
-        const reportViewTime = new Date(firstReportView.created_at).getTime();
-        const lastEventTime = new Date(lastEvent.created_at).getTime();
-        if (lastEventTime > reportViewTime) {
-          timeOnReportPage = lastEventTime - reportViewTime;
-        }
-      }
-
-      // 3. Total assessment time (from started_at to last answer, not including report views)
-      const lastAnswerEvent = [...(allEvents || [])].reverse().find(e => e.event_type === 'answer');
-      
-      let totalAssessmentTime: number | null = null;
-      if (assessmentData?.started_at && lastAnswerEvent) {
-        const startTime = new Date(assessmentData.started_at).getTime();
-        const endTime = new Date(lastAnswerEvent.created_at).getTime();
-        totalAssessmentTime = endTime - startTime;
-      }
-
-      setTimingMetrics({
-        avgTimePerQuestion,
-        totalAssessmentTime,
-        timeOnReportPage,
-        totalQuestions: answerEvents.length,
-        firstReportViewAt: firstReportView?.created_at || null,
-        lastEventAt: lastEvent?.created_at || null
-      });
-
-      // Fetch última respuesta (answer event)
-      const { data: lastAnswerData } = await supabase
-        .from('assessment_responses')
-        .select('area_id, skill_id, milestone_id, answer, created_at')
-        .eq('assessment_id', assessmentId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (lastAnswerData && lastAnswerData.length > 0) {
-        setLastResponse(lastAnswerData[0]);
-      }
-
-      // Fetch última vista (question_view or report_view event)
-      const { data: lastViewData } = await supabase
-        .from('assessment_events')
-        .select('event_type, area_id, skill_id, milestone_id, question_index, created_at')
-        .eq('assessment_id', assessmentId)
-        .in('event_type', ['question_view', 'report_view'])
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (lastViewData && lastViewData.length > 0) {
-        const view = lastViewData[0];
-        setLastView({
-          type: view.event_type === 'report_view' ? 'report' : 'question',
-          event_type: view.event_type,
-          area_id: view.area_id,
-          skill_id: view.skill_id,
-          milestone_id: view.milestone_id,
-          question_index: view.question_index,
-          created_at: view.created_at
-        });
-      }
-
-      // Fetch all milestones to get skill names
-      const skillIds = [...new Set(responses?.map(r => r.skill_id).filter(Boolean) as number[])];
-      const { data: skillsData } = await externalSupabase
+      const { data: milestonesData } = await externalSupabase
         .from('milestones')
-        .select('skill_id, skill_name, area_id, area_name')
-        .in('skill_id', skillIds);
+        .select('milestone_id, question, skill_id, skill_name, area_id, area_name')
+        .in('milestone_id', milestoneIds.length > 0 ? milestoneIds : [0]);
 
-      // Build skill name map
+      // Build maps
+      const milestoneMap = new Map<number, { question: string; skill_name: string; area_name: string; skill_id: number; area_id: number }>();
       const skillNameMap = new Map<number, string>();
       const areaIdMap = new Map<number, number>();
-      skillsData?.forEach(s => {
-        skillNameMap.set(s.skill_id, s.skill_name);
-        areaIdMap.set(s.skill_id, s.area_id);
+      
+      milestonesData?.forEach(m => {
+        milestoneMap.set(m.milestone_id, { question: m.question, skill_name: m.skill_name, area_name: m.area_name, skill_id: m.skill_id, area_id: m.area_id });
+        skillNameMap.set(m.skill_id, m.skill_name);
+        areaIdMap.set(m.skill_id, m.area_id);
       });
 
-      // Group responses by area and skill
-      const areaMap = new Map<number, AreaBreakdown>();
-      // Track first response timestamp per area to sort by actual response order
-      const firstResponseByArea = new Map<number, Date>();
-
-      responses?.forEach(response => {
-        const areaId = response.area_id || areaIdMap.get(response.skill_id!) || 0;
-        const skillId = response.skill_id || 0;
-
-        // Track first response time per area
-        if (!firstResponseByArea.has(areaId) && response.created_at) {
-          firstResponseByArea.set(areaId, new Date(response.created_at));
-        }
-
-        if (!areaMap.has(areaId)) {
-          areaMap.set(areaId, {
-            area_id: areaId,
-            area_name: areaNames[areaId] || `Area ${areaId}`,
-            skills: [],
-            total_questions: 0,
-            answered: 0,
-            completion_percentage: 0,
-            reached: true,
-            abandoned: false
-          });
-        }
-
-        const area = areaMap.get(areaId)!;
-        let skill = area.skills.find(s => s.skill_id === skillId);
-
-        if (!skill) {
-          skill = {
-            skill_id: skillId,
-            skill_name: skillNameMap.get(skillId) || `Skill ${skillId}`,
-            total_questions: 0,
-            answered: 0,
-            mastered: 0,
-            completed: false
-          };
-          area.skills.push(skill);
-        }
-
-        skill.total_questions++;
-        area.total_questions++;
-
-        if (response.answer) {
-          skill.answered++;
-          area.answered++;
-          if (response.answer === 'yes') {
-            skill.mastered++;
+      // Build answer time map from events
+      const answerTimeMap = new Map<number, number>();
+      allEvents.forEach(e => {
+        if (e.event_type === 'answer' && e.milestone_id && e.event_data) {
+          const data = e.event_data as any;
+          if (typeof data.time_to_answer_ms === 'number') {
+            answerTimeMap.set(e.milestone_id, data.time_to_answer_ms);
           }
         }
       });
 
-      // Calculate completion percentages and check if completed
-      areaMap.forEach(area => {
-        area.completion_percentage = area.total_questions > 0 
-          ? (area.answered / area.total_questions) * 100 
-          : 0;
-        
-        area.skills.forEach(skill => {
-          skill.completed = skill.answered === skill.total_questions;
-        });
+      // Build area breakdown with milestone-level detail
+      const areaMapData = new Map<number, AreaBreakdown>();
+      const firstResponseByArea = new Map<number, Date>();
+
+      responses.forEach(response => {
+        const areaId = response.area_id || areaIdMap.get(response.skill_id!) || 0;
+        const skillId = response.skill_id || 0;
+        const mInfo = milestoneMap.get(response.milestone_id);
+
+        if (!firstResponseByArea.has(areaId) && response.created_at) {
+          firstResponseByArea.set(areaId, new Date(response.created_at));
+        }
+
+        if (!areaMapData.has(areaId)) {
+          areaMapData.set(areaId, {
+            area_id: areaId, area_name: mInfo?.area_name || areaNames[areaId] || `Area ${areaId}`,
+            skills: [], total_questions: 0, answered: 0, completion_percentage: 0, reached: true, abandoned: false
+          });
+        }
+
+        const area = areaMapData.get(areaId)!;
+        let skill = area.skills.find(s => s.skill_id === skillId);
+        if (!skill) {
+          skill = {
+            skill_id: skillId, skill_name: mInfo?.skill_name || skillNameMap.get(skillId) || `Skill ${skillId}`,
+            total_questions: 0, answered: 0, mastered: 0, completed: false, milestones: []
+          };
+          area.skills.push(skill);
+        }
+
+        const milestoneDetail: MilestoneDetail = {
+          milestone_id: response.milestone_id,
+          question: mInfo?.question || `Milestone #${response.milestone_id}`,
+          skill_name: skill.skill_name,
+          area_name: area.area_name,
+          answer: response.answer,
+          time_to_answer_ms: answerTimeMap.get(response.milestone_id) || null,
+          created_at: response.created_at
+        };
+        skill.milestones.push(milestoneDetail);
+
+        skill.total_questions++;
+        area.total_questions++;
+        if (response.answer) {
+          skill.answered++;
+          area.answered++;
+          if (response.answer === 'yes') skill.mastered++;
+        }
       });
 
-      // Determine abandonment
-      // Sort areas by the order they were actually answered (first response timestamp)
-      const sortedAreas = Array.from(areaMap.values()).sort((a, b) => {
+      // Calculate completion & abandonment
+      areaMapData.forEach(area => {
+        area.completion_percentage = area.total_questions > 0 ? (area.answered / area.total_questions) * 100 : 0;
+        area.skills.forEach(skill => { skill.completed = skill.answered === skill.total_questions; });
+      });
+
+      const sortedAreas = Array.from(areaMapData.values()).sort((a, b) => {
         const aTime = firstResponseByArea.get(a.area_id)?.getTime() || 0;
         const bTime = firstResponseByArea.get(b.area_id)?.getTime() || 0;
         return aTime - bTime;
       });
-      let foundIncomplete = false;
+
       let abandonedAreaName: string | null = null;
       let abandonedSkillName: string | null = null;
-
+      let foundIncomplete = false;
       sortedAreas.forEach((area, index) => {
         if (area.completion_percentage < 100 && !foundIncomplete) {
           area.abandoned = true;
           foundIncomplete = true;
           abandonedAreaName = area.area_name;
-          // Find the incomplete skill
           const incompleteSkill = area.skills.find(s => !s.completed);
-          if (incompleteSkill) {
-            abandonedSkillName = incompleteSkill.skill_name;
-          }
+          if (incompleteSkill) abandonedSkillName = incompleteSkill.skill_name;
         }
         if (index > 0 && sortedAreas[index - 1].completion_percentage < 100) {
           area.reached = false;
         }
       });
 
-      // Calculate total duration
-      let totalDuration: string | null = null;
-      if (assessmentData?.started_at && events && events.length > 0) {
-        const startTime = new Date(assessmentData.started_at).getTime();
-        const endTime = new Date(events[0].created_at).getTime();
-        const durationMs = endTime - startTime;
-        const minutes = Math.floor(durationMs / 60000);
-        const seconds = Math.floor((durationMs % 60000) / 1000);
-        totalDuration = `${minutes}m ${seconds}s`;
+      // Report actions
+      const downloaded = allEvents.some(e => e.event_type === 'report_downloaded');
+      const ctaClicked = allEvents.some(e => e.event_type === 'cta_clicked');
+      const kineduDownloadClicked = allEvents.some(e => e.event_type === 'kinedu_download_clicked');
+      const sawReport = allEvents.some(e => e.event_type === 'report_view');
+      setReportActions({ downloaded, ctaClicked, kineduDownloadClicked });
+
+      // Timing metrics
+      const answerEvents = allEvents.filter(e => {
+        if (e.event_type !== 'answer' || !e.event_data) return false;
+        return typeof (e.event_data as any).time_to_answer_ms === 'number';
+      });
+      const avgTime = answerEvents.length > 0
+        ? answerEvents.reduce((s, e) => s + ((e.event_data as any).time_to_answer_ms || 0), 0) / answerEvents.length
+        : null;
+
+      let totalDurationMs: number | null = null;
+      const lastAnswerEvent = [...allEvents].reverse().find(e => e.event_type === 'answer');
+      if (assessmentData?.started_at && lastAnswerEvent) {
+        totalDurationMs = new Date(lastAnswerEvent.created_at).getTime() - new Date(assessmentData.started_at).getTime();
       }
 
-      // Check if saw unlock report and report
-      const sawUnlockReport = allEvents?.some(e => e.event_type === 'unlock_report_view') || false;
-      const sawReport = allEvents?.some(e => e.event_type === 'report_view') || false;
+      const uniqueSkillsAnswered = new Set(responses.map(r => r.skill_id).filter(Boolean));
 
-      // Calculate skills answered
-      const uniqueSkillsAnswered = new Set(responses?.map(r => r.skill_id).filter(Boolean));
-      const skillsAnswered = uniqueSkillsAnswered.size;
-      const remainingSkills = Math.max(0, totalExpectedSkills - skillsAnswered);
-      const remainingMilestones = Math.max(0, totalExpectedMilestones - (responses?.length || 0));
-
-      // Set abandonment info
-      const isAbandoned = !assessmentData?.completed_at;
-      setAbandonmentInfo({
-        isAbandoned,
+      // Build KPI
+      setKpi({
+        progress: { answered: responses.length, total: totalExpectedMilestones, percentage: totalExpectedMilestones > 0 ? (responses.length / totalExpectedMilestones) * 100 : 0 },
+        duration: formatDuration(totalDurationMs),
+        avgTimePerQuestion: formatDuration(avgTime),
+        skillsCompleted: { done: uniqueSkillsAnswered.size, total: totalExpectedSkills },
+        sawReport, ctaClicked,
+        isCompleted: !!assessmentData?.completed_at,
         completedAt: assessmentData?.completed_at || null,
-        abandonedArea: isAbandoned ? abandonedAreaName : null,
-        abandonedSkill: isAbandoned ? abandonedSkillName : null,
-        lastQuestionIndex: events?.[0]?.question_index ?? null,
-        totalDuration,
-        totalResponses: responses?.length || 0,
-        sawReport,
-        sawUnlockReport,
-        totalExpectedMilestones,
-        remainingMilestones,
-        totalExpectedSkills,
-        skillsAnswered,
-        remainingSkills
+        abandonedArea: abandonedAreaName,
+        abandonedSkill: abandonedSkillName
       });
+
+      // Build timeline
+      const startTime = assessmentData?.started_at || (allEvents.length > 0 ? allEvents[0].created_at : null);
+      if (startTime) {
+        const timelineItems: TimelineEvent[] = [];
+        
+        // Add assessment start
+        if (assessmentData?.started_at) {
+          timelineItems.push({
+            id: 'start', event_type: 'start', created_at: assessmentData.started_at,
+            relative_time: '+0s', label: 'Assessment iniciado', detail: null,
+            icon: 'play', color: 'text-green-600'
+          });
+        }
+
+        // Add all events (skip question_duration as it's redundant with answer)
+        allEvents.filter(e => e.event_type !== 'question_duration').forEach(event => {
+          const mInfo = event.milestone_id ? milestoneMap.get(event.milestone_id) : null;
+          const skillName = event.skill_id ? (skillNameMap.get(event.skill_id) || `Skill ${event.skill_id}`) : null;
+          const areaName = event.area_id ? (areaNames[event.area_id] || `Area ${event.area_id}`) : null;
+
+          let label = event.event_type;
+          let detail: string | null = null;
+
+          switch (event.event_type) {
+            case 'question_view':
+              label = `Vio pregunta`;
+              detail = mInfo ? `${mInfo.question.substring(0, 80)}${mInfo.question.length > 80 ? '...' : ''}` : (skillName ? `${skillName}` : null);
+              break;
+            case 'answer': {
+              const ans = (event.event_data as any)?.answer;
+              const timeMs = (event.event_data as any)?.time_to_answer_ms;
+              label = `Respondió ${ans === 'yes' ? '✓ Sí' : '✗ No'}`;
+              const parts: string[] = [];
+              if (mInfo) parts.push(mInfo.question.substring(0, 60) + (mInfo.question.length > 60 ? '...' : ''));
+              if (timeMs) parts.push(`(${formatDuration(timeMs)})`);
+              detail = parts.length > 0 ? parts.join(' ') : null;
+              break;
+            }
+            case 'helper_open':
+              label = 'Abrió helper/info';
+              detail = mInfo ? mInfo.question.substring(0, 60) : null;
+              break;
+            case 'back':
+              label = '← Retrocedió';
+              break;
+            case 'skip':
+              label = '→ Saltó pregunta';
+              break;
+            case 'report_view':
+              label = '📊 Vio el reporte';
+              break;
+            case 'unlock_report_view':
+              label = '🔓 Vio pantalla de unlock';
+              break;
+            case 'cta_clicked':
+              label = '🎯 Click en CTA "Try 7 days free"';
+              break;
+            case 'kinedu_download_clicked':
+              label = '📱 Click en descarga Kinedu';
+              break;
+            case 'report_downloaded':
+              label = '📥 Descargó reporte PDF';
+              break;
+            case 'exit':
+              label = '🚪 Salió del assessment';
+              detail = (event.event_data as any)?.reason || null;
+              break;
+          }
+
+          timelineItems.push({
+            id: event.id, event_type: event.event_type, created_at: event.created_at!,
+            relative_time: formatRelativeTime(event.created_at!, startTime),
+            label, detail,
+            icon: getEventIcon(event.event_type),
+            color: getEventColor(event.event_type)
+          });
+        });
+
+        setTimeline(timelineItems);
+      }
 
       setAreaBreakdown(sortedAreas);
     } catch (error) {
@@ -434,22 +428,41 @@ export function AssessmentBreakdownDialog({
     }
   };
 
-  const formatDuration = (ms: number | null): string => {
-    if (!ms) return 'N/A';
-    if (ms < 1000) return `${Math.round(ms)}ms`;
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    if (minutes === 0) return `${seconds}s`;
-    return `${minutes}m ${seconds % 60}s`;
+  const renderTimelineIcon = (iconName: string, color: string) => {
+    const cls = `h-4 w-4 ${color}`;
+    switch (iconName) {
+      case 'play': return <Play className={cls} />;
+      case 'eye': return <Eye className={cls} />;
+      case 'message': return <MessageSquare className={cls} />;
+      case 'help': return <HelpCircle className={cls} />;
+      case 'back': return <ArrowLeft className={cls} />;
+      case 'skip': return <SkipForward className={cls} />;
+      case 'report': return <FileText className={cls} />;
+      case 'zap': return <Zap className={cls} />;
+      case 'download': return <Download className={cls} />;
+      case 'exit': return <LogOut className={cls} />;
+      case 'timer': return <Timer className={cls} />;
+      default: return <Clock className={cls} />;
+    }
   };
+
+  const DeviceIcon = deviceInfo?.type === 'mobile' ? Smartphone : deviceInfo?.type === 'tablet' ? Tablet : Monitor;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            Desglose del Assessment - {babyName}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl flex items-center gap-3">
+              Desglose - {babyName}
+              {deviceInfo && (
+                <Badge variant="outline" className="text-xs font-normal gap-1">
+                  <DeviceIcon className="h-3 w-3" />
+                  {deviceInfo.type === 'mobile' ? 'Móvil' : deviceInfo.type === 'tablet' ? 'Tablet' : 'Desktop'}
+                </Badge>
+              )}
+            </DialogTitle>
+          </div>
         </DialogHeader>
 
         {loading ? (
@@ -457,263 +470,242 @@ export function AssessmentBreakdownDialog({
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="space-y-6 py-4">
-            {/* Abandonment Status Banner */}
-            {abandonmentInfo && (
-              <Card className={`p-4 ${abandonmentInfo.isAbandoned ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'}`}>
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-full ${abandonmentInfo.isAbandoned ? 'bg-red-100' : 'bg-green-100'}`}>
-                    {abandonmentInfo.isAbandoned ? (
-                      <XCircle className="h-6 w-6 text-red-600" />
-                    ) : (
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={`font-bold text-lg ${abandonmentInfo.isAbandoned ? 'text-red-700' : 'text-green-700'}`}>
-                      {abandonmentInfo.isAbandoned ? '⚠️ Assessment Abandonado' : '✓ Assessment Completado'}
+          <div className="space-y-5 py-2">
+
+            {/* === 1. KPI GRID === */}
+            {kpi && (
+              <div className="space-y-3">
+                {/* Status header */}
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${kpi.isCompleted ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  {kpi.isCompleted ? <CheckCircle className="h-5 w-5 text-green-600" /> : <XCircle className="h-5 w-5 text-red-600" />}
+                  <span className={`font-semibold ${kpi.isCompleted ? 'text-green-700' : 'text-red-700'}`}>
+                    {kpi.isCompleted ? 'Completado' : 'Abandonado'}
+                  </span>
+                  {kpi.isCompleted && kpi.completedAt && (
+                    <span className="text-sm text-green-600 ml-2">{format(new Date(kpi.completedAt), 'MMM dd, yyyy HH:mm')}</span>
+                  )}
+                  {!kpi.isCompleted && kpi.abandonedArea && (
+                    <span className="text-sm text-red-600 ml-2">
+                      en {kpi.abandonedArea}{kpi.abandonedSkill ? ` → ${kpi.abandonedSkill}` : ''}
+                    </span>
+                  )}
+                </div>
+
+                {/* 6 KPI cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {/* Progress */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs font-medium text-muted-foreground">Progreso</span>
+                    </div>
+                    <p className="text-xl font-bold">{kpi.progress.answered}/{kpi.progress.total}</p>
+                    <Progress value={kpi.progress.percentage} className="h-1.5 mt-1" />
+                    <p className="text-xs text-muted-foreground mt-0.5">{Math.round(kpi.progress.percentage)}%</p>
+                  </Card>
+
+                  {/* Duration */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Timer className="h-4 w-4 text-green-600" />
+                      <span className="text-xs font-medium text-muted-foreground">Duración</span>
+                    </div>
+                    <p className="text-xl font-bold">{kpi.duration}</p>
+                    <p className="text-xs text-muted-foreground">tiempo en assessment</p>
+                  </Card>
+
+                  {/* Avg per question */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      <span className="text-xs font-medium text-muted-foreground">Promedio/Pregunta</span>
+                    </div>
+                    <p className="text-xl font-bold">{kpi.avgTimePerQuestion}</p>
+                    <p className="text-xs text-muted-foreground">por respuesta</p>
+                  </Card>
+
+                  {/* Skills */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BarChart3 className="h-4 w-4 text-purple-600" />
+                      <span className="text-xs font-medium text-muted-foreground">Skills</span>
+                    </div>
+                    <p className="text-xl font-bold">{kpi.skillsCompleted.done}/{kpi.skillsCompleted.total}</p>
+                    <p className="text-xs text-muted-foreground">completados</p>
+                  </Card>
+
+                  {/* Saw Report */}
+                  <Card className={`p-3 ${kpi.sawReport ? 'bg-green-50 border-green-200' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      <span className="text-xs font-medium text-muted-foreground">Vio Reporte</span>
+                    </div>
+                    <p className={`text-xl font-bold ${kpi.sawReport ? 'text-green-600' : 'text-red-500'}`}>
+                      {kpi.sawReport ? '✓ Sí' : '✗ No'}
+                    </p>
+                  </Card>
+
+                  {/* CTA */}
+                  <Card className={`p-3 ${kpi.ctaClicked ? 'bg-blue-50 border-blue-200' : ''}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs font-medium text-muted-foreground">CTA Click</span>
+                    </div>
+                    <p className={`text-xl font-bold ${kpi.ctaClicked ? 'text-blue-600' : 'text-red-500'}`}>
+                      {kpi.ctaClicked ? '✓ Sí' : '✗ No'}
+                    </p>
+                  </Card>
+                </div>
+
+                {/* Report action details row */}
+                <div className="flex gap-2">
+                  <Badge variant={reportActions.downloaded ? 'default' : 'outline'} className="text-xs">
+                    <Download className="h-3 w-3 mr-1" />
+                    PDF {reportActions.downloaded ? '✓' : '✗'}
+                  </Badge>
+                  <Badge variant={reportActions.ctaClicked ? 'default' : 'outline'} className="text-xs">
+                    <MousePointer className="h-3 w-3 mr-1" />
+                    Try 7 Days {reportActions.ctaClicked ? '✓' : '✗'}
+                  </Badge>
+                  <Badge variant={reportActions.kineduDownloadClicked ? 'default' : 'outline'} className="text-xs">
+                    <Download className="h-3 w-3 mr-1" />
+                    Kinedu {reportActions.kineduDownloadClicked ? '✓' : '✗'}
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            {/* === 2. EVENT TIMELINE (Collapsible) === */}
+            {timeline.length > 0 && (
+              <Collapsible open={timelineOpen} onOpenChange={setTimelineOpen}>
+                <Card className="p-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      Timeline de Eventos ({timeline.length})
                     </h3>
-                    <div className="text-sm mt-1 space-y-1">
-                      {abandonmentInfo.isAbandoned ? (
-                        <>
-                          <p className="text-red-600">
-                            <strong>Punto de abandono:</strong> {abandonmentInfo.abandonedArea || 'N/A'} 
-                            {abandonmentInfo.abandonedSkill && ` → ${abandonmentInfo.abandonedSkill}`}
-                          </p>
-                          {abandonmentInfo.lastQuestionIndex !== null && (
-                            <p className="text-red-600"><strong>Última pregunta vista:</strong> #{abandonmentInfo.lastQuestionIndex + 1}</p>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-green-600">
-                          <strong>Completado:</strong> {abandonmentInfo.completedAt ? format(new Date(abandonmentInfo.completedAt), 'MMM dd, yyyy HH:mm') : 'Sí'}
-                        </p>
-                      )}
-                      <div className="flex gap-4 pt-1">
-                        <span className="text-muted-foreground"><strong>Duración:</strong> {abandonmentInfo.totalDuration || 'N/A'}</span>
-                        <span className="text-muted-foreground"><strong>Respuestas:</strong> {abandonmentInfo.totalResponses}/{abandonmentInfo.totalExpectedMilestones}</span>
-                        <span className={abandonmentInfo.sawUnlockReport ? 'text-green-600' : 'text-red-600'}>
-                          <strong>Vio unlock:</strong> {abandonmentInfo.sawUnlockReport ? '✓ Sí' : '✗ No'}
-                        </span>
-                        <span className={abandonmentInfo.sawReport ? 'text-green-600' : 'text-red-600'}>
-                          <strong>Vio reporte:</strong> {abandonmentInfo.sawReport ? '✓ Sí' : '✗ No'}
-                        </span>
+                    {timelineOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-4 relative">
+                      {/* Vertical line */}
+                      <div className="absolute left-[17px] top-2 bottom-2 w-px bg-border" />
+                      
+                      <div className="space-y-0">
+                        {timeline.map((event, idx) => (
+                          <div key={event.id} className="flex gap-3 py-1.5 relative">
+                            {/* Icon dot */}
+                            <div className="z-10 flex-shrink-0 w-[34px] h-[34px] rounded-full bg-background border flex items-center justify-center">
+                              {renderTimelineIcon(event.icon, event.color)}
+                            </div>
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-medium ${event.color}`}>{event.label}</span>
+                                <span className="text-xs text-muted-foreground font-mono">{event.relative_time}</span>
+                              </div>
+                              {event.detail && (
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">{event.detail}</p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground/60">
+                                {format(new Date(event.created_at), 'HH:mm:ss')}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      {abandonmentInfo.isAbandoned && (
-                        <div className="flex gap-4 pt-1 border-t mt-2 pt-2">
-                          <span className="text-orange-600">
-                            <strong>Skills faltantes:</strong> {abandonmentInfo.remainingSkills} de {abandonmentInfo.totalExpectedSkills} ({abandonmentInfo.skillsAnswered} completados)
-                          </span>
-                          <span className="text-orange-600">
-                            <strong>Preguntas faltantes:</strong> {abandonmentInfo.remainingMilestones} de {abandonmentInfo.totalExpectedMilestones}
-                          </span>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </div>
-              </Card>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )}
 
-            {/* Timing Metrics */}
-            {timingMetrics && (
-              <Card className="p-4 bg-blue-50 border-blue-200">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  Métricas de Tiempo
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-white rounded-lg">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {formatDuration(timingMetrics.avgTimePerQuestion)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tiempo promedio por pregunta
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      ({timingMetrics.totalQuestions} preguntas)
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-white rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatDuration(timingMetrics.totalAssessmentTime)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tiempo total en assessment
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-white rounded-lg">
-                    <p className="text-2xl font-bold text-purple-600">
-                      {formatDuration(timingMetrics.timeOnReportPage)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tiempo en página de reporte
-                    </p>
-                    {timingMetrics.firstReportViewAt && (
-                      <p className="text-xs text-muted-foreground">
-                        (desde {format(new Date(timingMetrics.firstReportViewAt), 'HH:mm:ss')})
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Report Actions Summary */}
-            <div className="grid grid-cols-3 gap-4">
-              <Card className={`p-4 ${reportActions.downloaded ? 'bg-green-50 border-green-200' : 'bg-secondary/20'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${reportActions.downloaded ? 'bg-green-100' : 'bg-secondary'}`}>
-                    <CheckCircle className={`h-5 w-5 ${reportActions.downloaded ? 'text-green-600' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Descargó Reporte</p>
-                    <p className={`text-xs ${reportActions.downloaded ? 'text-green-700' : 'text-muted-foreground'}`}>
-                      {reportActions.downloaded ? '✓ Sí' : '✗ No'}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className={`p-4 ${reportActions.ctaClicked ? 'bg-blue-50 border-blue-200' : 'bg-secondary/20'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${reportActions.ctaClicked ? 'bg-blue-100' : 'bg-secondary'}`}>
-                    <MousePointer className={`h-5 w-5 ${reportActions.ctaClicked ? 'text-blue-600' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Try 7 Days Free</p>
-                    <p className={`text-xs ${reportActions.ctaClicked ? 'text-blue-700' : 'text-muted-foreground'}`}>
-                      {reportActions.ctaClicked ? '✓ "Try 7 days free"' : '✗ No'}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className={`p-4 ${reportActions.kineduDownloadClicked ? 'bg-purple-50 border-purple-200' : 'bg-secondary/20'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${reportActions.kineduDownloadClicked ? 'bg-purple-100' : 'bg-secondary'}`}>
-                    <Download className={`h-5 w-5 ${reportActions.kineduDownloadClicked ? 'text-purple-600' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Download Kinedu (Activity Cards)</p>
-                    <p className={`text-xs ${reportActions.kineduDownloadClicked ? 'text-purple-700' : 'text-muted-foreground'}`}>
-                      {reportActions.kineduDownloadClicked ? '✓ Sí' : '✗ No'}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Last Activity */}
-            {lastActivity && (
-              <Card className="p-4 bg-secondary/20">
-                <div className="flex items-start gap-3">
-                  <MousePointer className="h-5 w-5 text-primary mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-1">Última Actividad</h3>
-                    <div className="text-sm space-y-1">
-                      <p><strong>Evento:</strong> {lastActivity.event_type}</p>
-                      {lastActivity.area_id && (
-                        <p><strong>Área:</strong> {areaNames[lastActivity.area_id] || lastActivity.area_id}</p>
-                      )}
-                      {lastActivity.skill_id && (
-                        <p><strong>Skill:</strong> {lastActivity.skill_id}</p>
-                      )}
-                      {lastActivity.milestone_id && (
-                        <p><strong>Milestone:</strong> {lastActivity.milestone_id}</p>
-                      )}
-                      {lastActivity.question_index !== null && (
-                        <p><strong>Pregunta:</strong> #{lastActivity.question_index + 1}</p>
-                      )}
-                      <p className="text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(lastActivity.created_at), 'MMM dd, yyyy HH:mm:ss')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Areas Breakdown */}
-            <div className="space-y-4">
+            {/* === 3. AREA BREAKDOWN WITH MILESTONE DETAILS === */}
+            <div className="space-y-3">
               <h3 className="text-lg font-semibold">Progreso por Área</h3>
               
-              {areaBreakdown.map((area, index) => (
-                <Card key={area.area_id} className={`p-4 ${!area.reached ? 'opacity-50' : ''}`}>
-                  <div className="space-y-3">
-                    {/* Area Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+              <Accordion type="multiple" className="space-y-2">
+                {areaBreakdown.map((area, index) => (
+                  <AccordionItem key={area.area_id} value={`area-${area.area_id}`} className={`border rounded-lg px-4 ${!area.reached ? 'opacity-50' : ''}`}>
+                    <AccordionTrigger className="hover:no-underline py-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <div className={`w-3 h-3 rounded-full ${areaColors[area.area_id]}`} />
-                        <h4 className="font-semibold text-lg">{area.area_name}</h4>
+                        <span className="font-semibold">{area.area_name}</span>
                         {area.abandoned && (
-                          <Badge variant="destructive" className="ml-2">
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Punto de Abandono
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                            <XCircle className="h-3 w-3 mr-0.5" />Abandono
                           </Badge>
                         )}
                         {area.completion_percentage === 100 && (
-                          <Badge variant="default" className="ml-2">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Completada
+                          <Badge className="text-[10px] px-1.5 py-0 bg-green-600">
+                            <CheckCircle className="h-3 w-3 mr-0.5" />OK
                           </Badge>
                         )}
-                        {!area.reached && (
-                          <Badge variant="secondary" className="ml-2">
-                            No Alcanzada
-                          </Badge>
+                        {!area.reached && <Badge variant="secondary" className="text-[10px]">No alcanzada</Badge>}
+                        <span className="text-xs text-muted-foreground ml-auto mr-2">
+                          {area.answered}/{area.total_questions} ({Math.round(area.completion_percentage)}%)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4 pb-2">
+                        <Progress value={area.completion_percentage} className="h-1.5" />
+
+                        {area.skills.map(skill => (
+                          <div key={skill.skill_id} className="space-y-2">
+                            {/* Skill header */}
+                            <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{skill.skill_name}</span>
+                                {skill.completed && <CheckCircle className="h-3.5 w-3.5 text-green-600" />}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{skill.answered}/{skill.total_questions}</span>
+                                <Badge variant="outline" className="text-[10px]">{skill.mastered} ✓</Badge>
+                              </div>
+                            </div>
+
+                            {/* Individual milestones */}
+                            <div className="space-y-1 pl-4">
+                              {skill.milestones.map(ms => (
+                                <div key={ms.milestone_id} className="flex items-start gap-2 py-1 border-b border-dashed last:border-0 text-xs">
+                                  {/* Answer indicator */}
+                                  <div className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
+                                    ms.answer === 'yes' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                  }`}>
+                                    {ms.answer === 'yes' ? '✓' : '✗'}
+                                  </div>
+                                  {/* Question text */}
+                                  <p className="flex-1 text-muted-foreground leading-snug">{ms.question}</p>
+                                  {/* Time */}
+                                  {ms.time_to_answer_ms && (
+                                    <span className="flex-shrink-0 text-[10px] text-muted-foreground/70 font-mono">
+                                      {formatDuration(ms.time_to_answer_ms)}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Area progression indicator */}
+                        {index < areaBreakdown.length - 1 && area.completion_percentage === 100 && (
+                          <div className="flex items-center gap-2 text-xs text-green-600 pt-1">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>→ Pasó a {areaBreakdown[index + 1].area_name}</span>
+                          </div>
                         )}
                       </div>
-                      <span className="text-sm font-medium">
-                        {area.answered}/{area.total_questions} preguntas
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <Progress value={area.completion_percentage} className="h-2" />
-
-                    {/* Skills */}
-                    <div className="space-y-2 pl-6">
-                      {area.skills.map(skill => (
-                        <div key={skill.skill_id} className="flex items-center justify-between py-2 border-b last:border-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{skill.skill_name}</span>
-                            {skill.completed && (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">
-                              {skill.answered}/{skill.total_questions} respondidas
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {skill.mastered} ✓
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Progression Status */}
-                    {index < areaBreakdown.length - 1 && area.completion_percentage === 100 && (
-                      <div className="flex items-center gap-2 text-sm text-green-600 pt-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Pasó a {areaBreakdown[index + 1].area_name}</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
 
-            {/* View Report Button */}
-            <div className="pt-4 border-t">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => window.open(`/report/${assessmentId}`, '_blank')}
-              >
+            {/* === 4. VIEW REPORT BUTTON === */}
+            <div className="pt-3 border-t">
+              <Button variant="outline" className="w-full" onClick={() => window.open(`/report/${assessmentId}`, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ver Reporte del Usuario
               </Button>
