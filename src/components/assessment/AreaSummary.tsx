@@ -180,71 +180,39 @@ export const AreaSummary = ({
         </div>
 
         {/* Skills List */}
-        <div className="space-y-3 mb-6">
+        <div className="mb-6">
           {skills.map((skill, index) => {
             const pace = skill.percentile !== null ? calculatePace(skill.percentile) : 1.0;
-            const progressPercent = skill.totalCount > 0 
-              ? (skill.masteredCount / skill.totalCount) * 100 
-              : 0;
             
             return (
-              <Card 
+              <div 
                 key={skill.skill_id} 
-                className="p-3 border-0 shadow-soft overflow-hidden relative"
+                className="py-3"
+                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.4)' : 'none' }}
               >
-                {/* Decorative accent */}
-                <div 
-                  className="absolute top-0 left-0 w-1 h-full"
-                  style={{ backgroundColor: areaColor }}
-                />
-
-                {/* Skill header */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span 
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ backgroundColor: areaColor }}
-                  >
-                    {index + 1}
-                  </span>
-                  <h3 className="text-base font-semibold" style={{ color: areaColor }}>
+                {/* Skill name + pace value */}
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-sm font-bold" style={{ color: areaColor }}>
                     {skill.skill_name}
                   </h3>
+                  <span className="text-lg font-extrabold" style={{ color: areaColor }}>
+                    {pace.toFixed(1)}×
+                  </span>
                 </div>
 
-                {/* Pace Gauge - compact version */}
-                <div className="mb-1">
-                  <PaceGauge
-                    percentile={skill.percentile ?? 50}
-                    color={areaColor}
-                    compact={true}
-                    hideGauge={false}
-                  />
-                </div>
+                {/* Compact gauge */}
+                <PaceGauge
+                  percentile={skill.percentile ?? 50}
+                  color={areaColor}
+                  compact={true}
+                  hideGauge={false}
+                />
 
                 {/* Percentile text */}
-                <p className="text-xs text-muted-foreground text-center mb-2">
+                <p className="text-xs text-muted-foreground text-center mt-1">
                   {getPercentileText(skill.percentile)}
                 </p>
-
-                {/* Milestones progress */}
-                <div className="bg-muted/30 rounded-md p-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] text-muted-foreground">Milestones</span>
-                    <span className="text-[10px] font-semibold" style={{ color: areaColor }}>
-                      {skill.masteredCount} of {skill.totalCount}
-                    </span>
-                  </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ 
-                        width: `${progressPercent}%`,
-                        backgroundColor: areaColor 
-                      }}
-                    />
-                  </div>
-                </div>
-              </Card>
+              </div>
             );
           })}
         </div>
