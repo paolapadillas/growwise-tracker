@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { calculatePace } from "@/components/PaceGauge";
+import { PaceGauge, calculatePace } from "@/components/PaceGauge";
 import { Star, AlertTriangle, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -148,8 +148,7 @@ export const AreaSummary = ({
           className="rounded-xl p-4 mb-5"
           style={{ backgroundColor: `${areaColor}08`, border: `1px solid ${areaColor}20` }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 mb-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Pace of Development
               </span>
@@ -178,15 +177,14 @@ export const AreaSummary = ({
                   </Tooltip>
                 </TooltipProvider>
               )}
-            </div>
           </div>
 
-          <p className="text-sm font-semibold text-foreground mb-3">
+          <p className="text-sm font-semibold text-foreground text-center mb-3">
             {getPaceDescription(skills)}
           </p>
 
           {/* Highlight Badges */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {bestSkill && (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
                 style={{ backgroundColor: `${areaColor}15`, color: areaColor }}>
@@ -220,8 +218,6 @@ export const AreaSummary = ({
         {/* Skills List */}
         <div className="space-y-4 mb-6">
           {skills.map((skill) => {
-            const pace = skill.percentile !== null ? calculatePace(skill.percentile) : 1.0;
-            const barWidth = Math.min(Math.max((pace / 2.0) * 100, 5), 100);
             const percentileColor = getPercentileColor(skill.percentile, areaColor);
 
             return (
@@ -260,28 +256,13 @@ export const AreaSummary = ({
                   </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-                  {/* 1.0x marker */}
-                  <div
-                    className="absolute top-0 bottom-0 w-[1.5px] bg-foreground/20 z-10"
-                    style={{ left: '50%' }}
-                  />
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${barWidth}%`,
-                      backgroundColor: areaColor,
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-[10px] text-muted-foreground">0×</span>
-                  <span className="text-[10px] font-semibold" style={{ color: areaColor }}>
-                    {pace.toFixed(1)}×
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">2×</span>
-                </div>
+                {/* PaceGauge */}
+                <PaceGauge
+                  percentile={skill.percentile ?? 50}
+                  color={areaColor}
+                  compact={true}
+                  hideGauge={false}
+                />
               </div>
             );
           })}
