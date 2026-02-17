@@ -136,49 +136,43 @@ export const AreaSummary = ({
   const progressPercent = totalMilestones > 0 ? (totalMastered / totalMilestones) * 100 : 0;
 
   const infoContent = (
-    <>
+    <div className="space-y-4">
       <div>
-        <h4 className="text-sm font-bold mb-1.5">Pace of Development</h4>
-        <p className="text-xs text-muted-foreground leading-relaxed">
+        <h4 className="text-base font-bold mb-1">Pace of Development</h4>
+        <p className="text-sm text-muted-foreground leading-relaxed">
           This value reflects your baby's natural development rhythm compared to others their age.
         </p>
       </div>
       
-      <div className="space-y-2.5 pt-1.5 border-t border-border/50">
-        <div className="flex items-start gap-2.5">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-            <span className="text-sm font-bold text-success">1.0×</span>
+      <div className="space-y-3 pt-3 border-t border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <span className="text-sm font-bold text-emerald-600">1.0×</span>
           </div>
-          <div className="flex-1 pt-1">
-            <p className="text-xs text-foreground">
-              Represents an <span className="font-semibold">average pace</span>
-            </p>
-          </div>
+          <p className="text-sm text-foreground">
+            Represents an <span className="font-semibold">average pace</span>
+          </p>
         </div>
 
-        <div className="flex items-start gap-2.5">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-            <span className="text-xs font-bold text-muted-foreground">&lt;1.0×</span>
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+            <span className="text-sm font-bold text-muted-foreground">&lt;1.0×</span>
           </div>
-          <div className="flex-1 pt-1">
-            <p className="text-xs text-foreground">
-              Developing at their <span className="font-semibold">own rhythm</span> — completely normal
-            </p>
-          </div>
+          <p className="text-sm text-foreground">
+            Developing at their <span className="font-semibold">own rhythm</span> — completely normal
+          </p>
         </div>
 
-        <div className="flex items-start gap-2.5">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
-            <span className="text-xs font-bold text-warning">&gt;1.0×</span>
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+            <span className="text-sm font-bold text-amber-600">&gt;1.0×</span>
           </div>
-          <div className="flex-1 pt-1">
-            <p className="text-xs text-foreground">
-              Reaching milestones <span className="font-semibold">earlier than average</span>
-            </p>
-          </div>
+          <p className="text-sm text-foreground">
+            Reaching milestones <span className="font-semibold">earlier than average</span>
+          </p>
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
