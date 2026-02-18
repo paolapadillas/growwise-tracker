@@ -16,35 +16,38 @@ const getAreaFeedback = (avgPercentile: number, babyName: string) => {
 
 // Mini half-circle pace gauge for table view
 const MiniPaceGauge = ({ pace, color }: { pace: number; color: string }) => {
-  const size = 48;
   const strokeWidth = 5;
-  const radius = (size - strokeWidth) / 2;
-  const centerX = size / 2;
-  const centerY = radius + strokeWidth / 2 + 1; // push center down so top of arc isn't clipped
-  const svgHeight = centerY + 2;
+  const radius = 18;
+  const padding = strokeWidth / 2 + 1;
+  const svgWidth = radius * 2 + padding * 2;
+  const svgHeight = radius + padding * 2;
+  const centerX = svgWidth / 2;
+  const centerY = radius + padding;
   
-  const startAngle = Math.PI;
-  const endAngle = 0;
-  const normalizedPace = Math.max(0, Math.min(2, pace)) / 2;
-  const currentAngle = startAngle - (normalizedPace * Math.PI);
+  const normalizedPace = Math.max(0, Math.min(2, pace)) / 2; // 0-1
   
-  const arcStartX = centerX + radius * Math.cos(startAngle);
-  const arcStartY = centerY - radius * Math.sin(startAngle);
-  const arcEndX = centerX + radius * Math.cos(endAngle);
-  const arcEndY = centerY - radius * Math.sin(endAngle);
-  const currentX = centerX + radius * Math.cos(currentAngle);
-  const currentY = centerY - radius * Math.sin(currentAngle);
+  // Arc from left (180°) to right (0°) — top semicircle
+  const bgStartX = centerX - radius;
+  const bgStartY = centerY;
+  const bgEndX = centerX + radius;
+  const bgEndY = centerY;
   
+  // Value arc: same start, ends at the angle proportional to pace
+  const currentAngle = Math.PI - (normalizedPace * Math.PI);
+  const valEndX = centerX + radius * Math.cos(currentAngle);
+  const valEndY = centerY - radius * Math.sin(currentAngle);
   const largeArc = normalizedPace > 0.5 ? 1 : 0;
   
-  const bgPath = `M ${arcStartX} ${arcStartY} A ${radius} ${radius} 0 1 1 ${arcEndX} ${arcEndY}`;
-  const valuePath = `M ${arcStartX} ${arcStartY} A ${radius} ${radius} 0 ${largeArc} 1 ${currentX} ${currentY}`;
+  const bgPath = `M ${bgStartX} ${bgStartY} A ${radius} ${radius} 0 1 1 ${bgEndX} ${bgEndY}`;
+  const valuePath = `M ${bgStartX} ${bgStartY} A ${radius} ${radius} 0 ${largeArc} 1 ${valEndX} ${valEndY}`;
   
   return (
     <div className="flex flex-col items-center">
-      <svg width={size} height={svgHeight} viewBox={`0 0 ${size} ${svgHeight}`}>
+      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
         <path d={bgPath} fill="none" stroke="hsl(var(--border))" strokeWidth={strokeWidth} strokeLinecap="round" />
-        <path d={valuePath} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        {normalizedPace > 0.01 && (
+          <path d={valuePath} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        )}
       </svg>
       <span className="text-[10px] font-bold -mt-1" style={{ color }}>{pace.toFixed(1)}×</span>
     </div>
