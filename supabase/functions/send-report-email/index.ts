@@ -166,7 +166,7 @@ function buildEmailHtml(babyName: string, ageMonths: number, areas: AreaResult[]
     const pl = getPaceLabel(a.percentile)
     return `
       <table width="100%" cellpadding="0" cellspacing="0" style="background: #FBF9F6; border-radius: 16px; border: 1.5px solid #E8E4DF;">
-        <tr><td style="height: 3px; background: ${color};"></td></tr>
+        
         <tr><td style="padding: 14px 14px 12px;">
           <table width="100%" cellpadding="0" cellspacing="0"><tr>
             <td style="vertical-align: middle;">
