@@ -187,21 +187,34 @@ export const AreaSummary = ({
             return (
               <div 
                 key={skill.skill_id} 
-                className="flex items-center gap-2 px-2 py-3.5"
-                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.2)' : 'none' }}
+                className="px-3 py-4"
+                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.15)' : 'none' }}
               >
-                {/* Left: Skill name + percentile */}
-                <div className="flex-shrink-0 w-[32%]">
-                  <h3 className="text-[13px] font-bold text-foreground leading-tight">
-                    {skill.skill_name}
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    <span className="font-semibold" style={{ color: areaColor }}>{skill.percentile !== null ? `P${Math.round(skill.percentile)}` : '—'}</span>
-                  </p>
+                {/* Row 1: Skill name + pace badge */}
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground leading-tight">
+                      {skill.skill_name}
+                    </h3>
+                    <p className="text-[11px] mt-0.5">
+                      <span className="font-semibold" style={{ color: areaColor }}>
+                        {skill.percentile !== null ? `P${Math.round(skill.percentile)}` : '—'}
+                      </span>
+                    </p>
+                  </div>
+                  <div 
+                    className="flex-shrink-0 px-3 py-1 rounded-lg text-lg font-extrabold tabular-nums"
+                    style={{ 
+                      color: areaColor,
+                      backgroundColor: `${areaColor}0A`
+                    }}
+                  >
+                    {pace.toFixed(1)}×
+                  </div>
                 </div>
 
-                {/* Center: Compact gauge - more space */}
-                <div className="flex-1 min-w-0">
+                {/* Row 2: Full-width gauge */}
+                <div className="w-full">
                   <PaceGauge
                     percentile={skill.percentile ?? 50}
                     color={areaColor}
@@ -209,17 +222,6 @@ export const AreaSummary = ({
                     hideGauge={false}
                     hideValue={true}
                   />
-                </div>
-
-                {/* Right: Pace badge */}
-                <div 
-                  className="flex-shrink-0 px-2.5 py-1 rounded-md text-base font-bold tabular-nums"
-                  style={{ 
-                    color: areaColor,
-                    backgroundColor: `${areaColor}0D`
-                  }}
-                >
-                  {pace.toFixed(1)}×
                 </div>
               </div>
             );
