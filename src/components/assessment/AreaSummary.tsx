@@ -1,89 +1,12 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { calculatePace } from "@/components/PaceGauge";
+import { PaceGauge, calculatePace } from "@/components/PaceGauge";
 import { CheckCircle2, TrendingUp, Award, Star, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AreaActivityRecommendation } from "@/components/AreaActivityRecommendation";
-
-const getAreaFeedback = (avgPercentile: number, babyName: string) => {
-  if (avgPercentile >= 80) return { text: `${babyName} is ahead of pace!` };
-  if (avgPercentile >= 40) return { text: `${babyName} is developing right on track` };
-  return { text: `${babyName} is building up — keep going!` };
-};
-
-// Mini half-circle pace gauge for table view
-const MiniPaceGauge = ({ pace, color }: { pace: number; color: string }) => {
-  const size = 60;
-  const strokeWidth = 4;
-  const padding = strokeWidth / 2 + 1;
-  const radius = (size - padding * 2) / 2;
-  const centerX = size / 2;
-  const centerY = size / 2;
-  
-  const normalizedPace = Math.max(0, Math.min(2, pace)) / 2;
-  
-  // Semi-circle from left to right (top arc)
-  const arcStartX = centerX - radius;
-  const arcStartY = centerY;
-  const arcEndX = centerX + radius;
-  const arcEndY = centerY;
-  
-  const bgPath = `M ${arcStartX} ${arcStartY} A ${radius} ${radius} 0 1 1 ${arcEndX} ${arcEndY}`;
-  
-  // Value arc
-  const currentAngle = Math.PI - (normalizedPace * Math.PI);
-  const currentX = centerX + radius * Math.cos(currentAngle);
-  const currentY = centerY - radius * Math.sin(currentAngle);
-  const largeArc = normalizedPace > 0.5 ? 1 : 0;
-  const valuePath = normalizedPace > 0.01 
-    ? `M ${arcStartX} ${arcStartY} A ${radius} ${radius} 0 ${largeArc} 1 ${currentX} ${currentY}`
-    : '';
-  
-  const svgHeight = size / 2 + padding;
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={svgHeight} viewBox={`0 0 ${size} ${svgHeight}`}>
-        <path d={bgPath} fill="none" stroke="hsl(var(--border))" strokeWidth={strokeWidth} strokeLinecap="round" />
-        {valuePath && <path d={valuePath} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />}
-      </svg>
-      <span className="text-[11px] font-bold -mt-1" style={{ color }}>{pace.toFixed(1)}×</span>
-    </div>
-  );
-};
-
-// Mastery dots indicator
-const MasteryDots = ({ mastered, total, color }: { mastered: number; total: number; color: string }) => {
-  const maxDots = Math.min(total, 14);
-  const filledDots = Math.min(mastered, maxDots);
-  
-  return (
-    <div className="flex items-center gap-0.5">
-      <div className="flex gap-[3px]">
-        {Array.from({ length: maxDots }).map((_, i) => (
-          <div
-            key={i}
-            className="w-[6px] h-[6px] rounded-full"
-            style={{ backgroundColor: i < filledDots ? color : 'hsl(var(--muted-foreground) / 0.25)' }}
-          />
-        ))}
-      </div>
-      {total > maxDots && (
-        <span className="text-[10px] text-muted-foreground ml-0.5">+{total - maxDots}</span>
-      )}
-      <span className="text-[10px] text-muted-foreground ml-1">{mastered}/{total}</span>
-    </div>
-  );
-};
-
-const getRankColor = (percentile: number, areaColor: string): string => {
-  if (percentile >= 60) return 'hsl(142, 70%, 42%)'; // green
-  if (percentile >= 30) return areaColor; // area color (yellow-ish range)
-  return 'hsl(25, 95%, 53%)'; // orange
-};
 
 interface SkillSummary {
   skill_id: number;
@@ -222,89 +145,68 @@ export const AreaSummary = ({
           </div>
         </div>
 
-        {/* Pace of Development section */}
-        {(() => {
-          const validSkills = skills.filter(s => s.percentile !== null);
-          const avgPercentile = validSkills.length > 0 ? validSkills.reduce((sum, s) => sum + (s.percentile ?? 0), 0) / validSkills.length : 50;
-          const feedback = getAreaFeedback(avgPercentile, babyName || 'Your baby');
-          return (
-            <div className="bg-muted/40 rounded-xl p-5 mb-5 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Pace of Development
-                </span>
-                {isMobile ? (
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button className="inline-flex items-center justify-center p-0.5 rounded-full hover:bg-muted/50 active:bg-muted transition-colors">
-                        <Info className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-sm">
-                      <div className="space-y-3">
-                        {infoContent}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button className="inline-flex items-center justify-center">
-                          <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-sm p-4 space-y-3" side="bottom">
-                        {infoContent}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-              <p className="text-sm font-medium leading-tight" style={{ color: areaColor }}>
-                {feedback.text}
-              </p>
-            </div>
-          );
-        })()}
+        {/* Pace of Development subtitle with info */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <span className="text-sm font-semibold text-foreground/70">
+            Pace of Development
+          </span>
+          {isMobile ? (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <button className="inline-flex items-center justify-center p-1 rounded-full hover:bg-muted/50 active:bg-muted transition-colors">
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <div className="space-y-3">
+                  {infoContent}
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="inline-flex items-center justify-center">
+                    <Info className="w-4 h-4 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-4 space-y-3" side="bottom">
+                  {infoContent}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
 
-        {/* Skills Table */}
+        {/* Skills List */}
         <div className="mb-6">
-          {/* Table header */}
-          <div className="flex items-center px-1 pb-2 border-b border-border/40">
-            <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Skill</span>
-            <span className="w-16 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pace</span>
-            <span className="w-14 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Rank</span>
-          </div>
-
           {skills.map((skill, index) => {
             const pace = skill.percentile !== null ? calculatePace(skill.percentile) : 1.0;
-            const percentile = skill.percentile ?? 50;
-            const rankColor = getRankColor(percentile, areaColor);
             
             return (
               <div 
                 key={skill.skill_id} 
-                className="flex items-center py-3 px-1"
-                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.3)' : 'none' }}
+                className="py-3"
+                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.4)' : 'none' }}
               >
-                {/* Skill info */}
-                <div className="flex-1 min-w-0 pr-2">
-                  <h3 className="text-sm font-bold mb-1 truncate">{skill.skill_name}</h3>
-                  <MasteryDots mastered={skill.masteredCount} total={skill.totalCount} color={areaColor} />
-                </div>
+                {/* Skill name */}
+                <h3 className="text-sm font-bold mb-1" style={{ color: areaColor }}>
+                  {skill.skill_name}
+                </h3>
 
-                {/* Mini gauge */}
-                <div className="w-16 flex justify-center">
-                  <MiniPaceGauge pace={pace} color={areaColor} />
-                </div>
+                {/* Compact gauge */}
+                <PaceGauge
+                  percentile={skill.percentile ?? 50}
+                  color={areaColor}
+                  compact={true}
+                  hideGauge={false}
+                />
 
-                {/* Rank */}
-                <div className="w-14 text-right">
-                  <span className="text-xl font-semibold" style={{ color: rankColor }}>
-                    {Math.round(percentile)}%
-                  </span>
-                </div>
+                {/* Percentile text */}
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  {getPercentileText(skill.percentile)}
+                </p>
               </div>
             );
           })}
