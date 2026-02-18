@@ -495,13 +495,15 @@ const AssessmentNew = () => {
       // Calculate scores and show area summary
       await calculateSkillScores(areaIndex);
       setViewState({ type: 'areaSummary', areaIndex });
+      // Auto-save with the new state (areaSummary at current area)
+      saveProgress({ areaIndex, skillIndex: currentArea.skills.length - 1 });
     } else {
       // Move to next skill
-      setViewState({ type: 'skill', areaIndex, skillIndex: skillIndex + 1 });
+      const nextSkillIndex = skillIndex + 1;
+      setViewState({ type: 'skill', areaIndex, skillIndex: nextSkillIndex });
+      // Auto-save with the new skill index
+      saveProgress({ areaIndex, skillIndex: nextSkillIndex });
     }
-
-    // Auto-save progress
-    saveProgress();
   };
 
   // Handle skip entire area
@@ -637,8 +639,8 @@ const AssessmentNew = () => {
     } else {
       // Move to next area
       setViewState({ type: 'skill', areaIndex: areaIndex + 1, skillIndex: 0 });
-      // Save progress on area transition
-      saveProgress();
+      // Save progress on area transition with new area index
+      saveProgress({ areaIndex: areaIndex + 1, skillIndex: 0 });
     }
     
     // Scroll to top
