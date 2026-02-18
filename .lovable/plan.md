@@ -1,30 +1,20 @@
 
 
-## Rediseño de la sección "Pace of Development" en AreaSummary
+## Tres cambios en AreaSummary
 
-### Cambios
+### 1. Rank sin bold
+Cambiar el texto del porcentaje de `text-xl font-extrabold` a `text-xl font-semibold` en la columna Rank.
 
-Se va a modificar la sección de "Pace of Development" en `src/components/assessment/AreaSummary.tsx` para:
+### 2. "Recommended Activities" mas chiquito y bonito
+Reducir el texto del boton colapsable de `text-sm font-semibold` a `text-xs font-medium`, y acortar el texto a solo "Recommended Activity".
 
-1. **Envolver todo en un contenedor shaded** - Un `div` con fondo sutil (`bg-muted/40` o similar) y bordes redondeados (`rounded-xl`) con padding interno.
-
-2. **Centrar todo el contenido** - Tanto el subtítulo "PACE OF DEVELOPMENT" como el feedback "Alana is developing right on track" van centrados.
-
-3. **Quitar el ícono** - Eliminar el `{feedback.icon}` (la checkmark/estrella/trending) que aparece al lado del texto.
-
-4. **Mantener el botón de info** - El ícono de info (tooltip/dialog) se queda al lado del subtítulo.
-
-### Resultado visual esperado
-
-```text
-┌─────────────────────────────────┐
-│     PACE OF DEVELOPMENT (i)     │
-│                                 │
-│  Alana is developing right      │
-│         on track                │
-└─────────────────────────────────┘
-```
+### 3. Arreglar la grafica MiniPaceGauge
+El problema visual es que el arco del SVG tiene "blobs" en los extremos. Se va a:
+- Ajustar el `centerY` para que el arco se dibuje correctamente dentro del viewBox
+- Usar `strokeLinecap="butt"` en el fondo para evitar artefactos
+- Incrementar ligeramente el tamaño para mejor legibilidad
 
 ### Archivo a editar
-- `src/components/assessment/AreaSummary.tsx` - Líneas ~230-270 (sección del Pace of Development dentro del IIFE)
+- `src/components/assessment/AreaSummary.tsx` (linea 300 para Rank, linea 18-51 para gauge)
+- `src/components/AreaActivityRecommendation.tsx` (linea 74-79 para el texto)
 
