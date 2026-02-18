@@ -69,18 +69,18 @@ export function AreaActivityRecommendation({
       {/* Collapsible Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-center gap-2 py-3 transition-colors hover:opacity-80"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-border/40 transition-colors hover:bg-muted/30"
       >
         <span 
           className="text-sm font-semibold"
           style={{ color: areaColor }}
         >
-          Recommended Activities to Keep Building These Skills
+          Recommended Activities
         </span>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5" style={{ color: areaColor }} />
+          <ChevronUp className="w-4 h-4" style={{ color: areaColor }} />
         ) : (
-          <ChevronDown className="w-5 h-5" style={{ color: areaColor }} />
+          <ChevronDown className="w-4 h-4" style={{ color: areaColor }} />
         )}
       </button>
 

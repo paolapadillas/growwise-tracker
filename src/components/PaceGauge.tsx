@@ -289,7 +289,7 @@ export const PaceGauge = ({
 
       {/* Gauge visualization with vertical lines - Hide if hideGauge is true */}
       {!hideGauge && (
-        <div className={compact ? "relative px-1 -mt-2" : "relative px-2 -mt-4"}>
+        <div className={compact ? "relative px-2 -mt-1" : "relative px-2 -mt-4"}>
         {/* Labels */}
         <div className="flex justify-between text-xs text-muted-foreground mb-3">
           
@@ -298,11 +298,12 @@ export const PaceGauge = ({
         </div>
 
         {/* Vertical lines gauge */}
-        <div className={compact ? "relative h-8 flex items-end justify-between gap-[1px]" : "relative h-16 flex items-end justify-between gap-[2px]"}>
+      <div className={compact ? "relative h-8 flex items-end justify-between gap-[1.5px]" : "relative h-16 flex items-end justify-between gap-[2px]"}>
           {Array.from({
-          length: compact ? 40 : 60
+          length: compact ? 30 : 60
         }).map((_, i) => {
-          const position = i / (compact ? 39 : 59); // 0 to 1
+          const totalBars = compact ? 30 : 60;
+          const position = i / (totalBars - 1); // 0 to 1
           
           // Linear mapping: 0x -> 0%, 1.5x -> 50%, 3x -> 100%
           // paceAtPosition ranges from 0 to 3 (visual scale)
@@ -313,30 +314,27 @@ export const PaceGauge = ({
           
           // Calculate visual distance (in position space, not pace value space)
           const visualDistance = Math.abs(position - currentPacePosition);
-          const isCurrentPosition = visualDistance < 0.015;
+          const isCurrentPosition = visualDistance < 0.02;
           
-          // Determine if within gradient range based on visual distance
-          const isInGradient = visualDistance > 0.015 && visualDistance <= 0.05;
+          // Wider gradient range for compact mode
+          const gradientRange = compact ? 0.07 : 0.05;
+          const isInGradient = visualDistance > 0.02 && visualDistance <= gradientRange;
           
           // Calculate intensity based on visual distance (closer = more intense)
-          let intensity = 0;
-          const baseHeight = compact ? 20 : 40;
-          const maxHeight = compact ? 30 : 60;
+          const baseHeight = compact ? 12 : 40;
+          const maxHeight = compact ? 28 : 60;
           let lineHeight = baseHeight;
-          let lineOpacity = 0.2; // Default opacity for gray lines
-          let lineColor = "hsl(220, 15%, 50%)"; // Neutral gray
+          let lineOpacity = compact ? 0.5 : 0.2;
+          let lineColor = compact ? "#E8E9ED" : "hsl(220, 15%, 50%)";
           
           if (isCurrentPosition) {
-            // Current position - full intensity
-            intensity = 1;
             lineHeight = maxHeight;
             lineOpacity = 1;
             lineColor = color;
           } else if (isInGradient) {
-            // Gradient effect - decreasing intensity based on visual distance
-            intensity = 1 - (visualDistance - 0.015) / 0.035; // normalize 0.015-0.05 to 1-0
+            const intensity = 1 - (visualDistance - 0.02) / (gradientRange - 0.02);
             lineHeight = baseHeight + ((maxHeight - baseHeight) * intensity);
-            lineOpacity = 0.3 + (0.7 * intensity);
+            lineOpacity = compact ? 0.5 + (0.5 * intensity) : 0.3 + (0.7 * intensity);
             lineColor = color;
           }
           
@@ -344,7 +342,8 @@ export const PaceGauge = ({
             height: `${lineHeight}px`,
             backgroundColor: lineColor,
             opacity: lineOpacity,
-            boxShadow: isCurrentPosition ? `0 0 12px ${color}` : 'none'
+            minWidth: compact ? '3px' : undefined,
+            boxShadow: isCurrentPosition ? `0 0 ${compact ? '8' : '12'}px ${color}40` : 'none'
           }} />;
         })}
         </div>
@@ -357,7 +356,7 @@ export const PaceGauge = ({
         </div>
 
         {/* Scale labels */}
-        <div className={compact ? "flex justify-between text-[9px] text-muted-foreground/70 mt-0.5" : "flex justify-between text-[10px] text-muted-foreground/70 mt-1"}>
+        <div className={compact ? "flex justify-between text-[11px] font-medium text-muted-foreground/70 mt-0.5" : "flex justify-between text-[10px] text-muted-foreground/70 mt-1"}>
           <span>0×</span>
           <span>1×</span>
           <span>2×</span>

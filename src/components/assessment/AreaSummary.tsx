@@ -179,28 +179,28 @@ export const AreaSummary = ({
           )}
         </div>
 
-        {/* Skills List */}
-        <div className="mb-6 bg-card rounded-2xl shadow-sm border border-border/40 overflow-hidden">
+        {/* Skills List - flat list, no card */}
+        <div className="mb-6">
           {skills.map((skill, index) => {
             const pace = skill.percentile !== null ? calculatePace(skill.percentile) : 1.0;
             
             return (
               <div 
                 key={skill.skill_id} 
-                className="flex items-center gap-3 px-4 py-4"
-                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.3)' : 'none' }}
+                className="flex items-center gap-2 px-2 py-3.5"
+                style={{ borderBottom: index < skills.length - 1 ? '1px solid hsl(var(--border) / 0.2)' : 'none' }}
               >
                 {/* Left: Skill name + percentile */}
-                <div className="flex-shrink-0 w-[38%]">
-                  <h3 className="text-sm font-bold text-foreground leading-tight">
+                <div className="flex-shrink-0 w-[32%]">
+                  <h3 className="text-[13px] font-bold text-foreground leading-tight">
                     {skill.skill_name}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Percentile <span className="font-semibold" style={{ color: areaColor }}>{skill.percentile !== null ? `${Math.round(skill.percentile)}th` : '—'}</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <span className="font-semibold" style={{ color: areaColor }}>{skill.percentile !== null ? `P${Math.round(skill.percentile)}` : '—'}</span>
                   </p>
                 </div>
 
-                {/* Center: Compact gauge */}
+                {/* Center: Compact gauge - more space */}
                 <div className="flex-1 min-w-0">
                   <PaceGauge
                     percentile={skill.percentile ?? 50}
@@ -211,13 +211,12 @@ export const AreaSummary = ({
                   />
                 </div>
 
-                {/* Right: Pace value */}
+                {/* Right: Pace badge */}
                 <div 
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg text-lg font-bold"
+                  className="flex-shrink-0 px-2.5 py-1 rounded-md text-base font-bold tabular-nums"
                   style={{ 
                     color: areaColor,
-                    backgroundColor: `${areaColor}10`,
-                    border: `1px solid ${areaColor}25`
+                    backgroundColor: `${areaColor}0D`
                   }}
                 >
                   {pace.toFixed(1)}×
