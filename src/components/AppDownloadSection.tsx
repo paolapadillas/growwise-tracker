@@ -6,7 +6,7 @@ interface AppDownloadSectionProps {
 }
 
 const AppDownloadSection = ({ assessmentId, babyId }: AppDownloadSectionProps) => {
-  const appStoreUrl = "https://apps.apple.com/us/app/kinedu-baby-development/id741277284";
+  const appStoreUrl = "https://apps.apple.com/mx/app/kinedu-desarrollo-del-beb%C3%A9/id741277284";
   const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kinedu.appkinedu&hl=es_MX";
 
   return (
