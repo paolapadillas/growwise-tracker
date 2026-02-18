@@ -142,8 +142,8 @@ function buildEmailHtml(params: {
       </table>
     </td></tr>
     <tr><td style="padding:0 14px;border-top:1px solid #E8E8E5;">
-      <p style="margin:8px 0 6px;font-size:12px;color:#6b7280;text-align:center;">
-        📊 <strong>Full report</strong> &nbsp;·&nbsp; 🎯 <strong>Focus areas</strong> &nbsp;·&nbsp; 🧸 <strong>Daily activities</strong>
+      <p style="margin:8px 0 6px;font-size:11px;color:#6b7280;text-align:center;">
+        <strong>Full report</strong> &nbsp;·&nbsp; <strong>Focus areas</strong> &nbsp;·&nbsp; <strong>Daily activities</strong>
       </p>
     </td></tr>
   </table>
@@ -202,7 +202,7 @@ function buildEmailHtml(params: {
     <tr><td align="center" style="padding:3px 16px 6px;">
       <p style="margin:0;font-size:10px;color:#9ca3af;">No commitment · Cancel anytime</p>
     </td></tr>
-    <tr><td align="center" style="padding:2px 16px 14px;">
+    <tr><td align="center" style="padding:2px 16px 10px;">
       <table cellpadding="0" cellspacing="0" border="0"><tr>
         <td style="padding-right:6px;">
           <a href="https://apps.apple.com/mx/app/kinedu-desarrollo-del-beb%C3%A9/id741277284">
@@ -220,7 +220,7 @@ function buildEmailHtml(params: {
 </td></tr>
 
 <!-- Footer -->
-<tr><td style="padding:12px 20px 4px;">
+<tr><td style="padding:6px 20px 4px;">
   <p style="margin:0;font-size:12px;color:#374151;font-weight:700;text-align:center;">Trusted by 10M+ families</p>
   <p style="margin:2px 0 0;font-size:11px;color:#9ca3af;text-align:center;">🏆 MIT Solve &nbsp;·&nbsp; 🏛️ Harvard &nbsp;·&nbsp; 🌲 Stanford</p>
 </td></tr>
