@@ -16,40 +16,36 @@ const getAreaFeedback = (avgPercentile: number, babyName: string) => {
 
 // Mini half-circle pace gauge for table view
 const MiniPaceGauge = ({ pace, color }: { pace: number; color: string }) => {
-  const strokeWidth = 5;
-  const radius = 18;
-  const padding = strokeWidth / 2 + 1;
+  const strokeWidth = 4;
+  const radius = 16;
+  const padding = strokeWidth + 1;
   const svgWidth = radius * 2 + padding * 2;
-  const svgHeight = radius + padding * 2;
+  const svgHeight = radius + padding + strokeWidth;
   const centerX = svgWidth / 2;
   const centerY = radius + padding;
   
   const normalizedPace = Math.max(0, Math.min(2, pace)) / 2; // 0-1
   
-  // Arc from left (180°) to right (0°) — top semicircle
-  const bgStartX = centerX - radius;
-  const bgStartY = centerY;
-  const bgEndX = centerX + radius;
-  const bgEndY = centerY;
+  // Background: full semicircle from left to right
+  const bgPath = `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX + radius} ${centerY}`;
   
-  // Value arc: same start, ends at the angle proportional to pace
+  // Value arc: use a slightly smaller radius so it sits inside the bg track
+  const valRadius = radius;
   const currentAngle = Math.PI - (normalizedPace * Math.PI);
-  const valEndX = centerX + radius * Math.cos(currentAngle);
-  const valEndY = centerY - radius * Math.sin(currentAngle);
+  const valEndX = centerX + valRadius * Math.cos(currentAngle);
+  const valEndY = centerY - valRadius * Math.sin(currentAngle);
   const largeArc = normalizedPace > 0.5 ? 1 : 0;
-  
-  const bgPath = `M ${bgStartX} ${bgStartY} A ${radius} ${radius} 0 1 1 ${bgEndX} ${bgEndY}`;
-  const valuePath = `M ${bgStartX} ${bgStartY} A ${radius} ${radius} 0 ${largeArc} 1 ${valEndX} ${valEndY}`;
+  const valuePath = `M ${centerX - valRadius} ${centerY} A ${valRadius} ${valRadius} 0 ${largeArc} 1 ${valEndX} ${valEndY}`;
   
   return (
     <div className="flex flex-col items-center">
-      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} overflow="visible">
         <path d={bgPath} fill="none" stroke="hsl(var(--border))" strokeWidth={strokeWidth} strokeLinecap="round" />
         {normalizedPace > 0.01 && (
-          <path d={valuePath} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+          <path d={valuePath} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="butt" />
         )}
       </svg>
-      <span className="text-[10px] font-bold -mt-1" style={{ color }}>{pace.toFixed(1)}×</span>
+      <span className="text-[10px] font-bold -mt-0.5" style={{ color }}>{pace.toFixed(1)}×</span>
     </div>
   );
 };
