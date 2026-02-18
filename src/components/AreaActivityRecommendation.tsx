@@ -69,7 +69,7 @@ export function AreaActivityRecommendation({
       {/* Collapsible Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-border/40 transition-colors hover:bg-muted/30"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-colors hover:bg-muted/20"
       >
         <span 
           className="text-sm font-semibold"
