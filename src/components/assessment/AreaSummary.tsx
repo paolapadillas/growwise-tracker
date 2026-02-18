@@ -231,7 +231,7 @@ export const AreaSummary = ({
                   <div className="flex-1 min-w-0">
                     <p 
                       className="text-center text-xs font-bold tabular-nums"
-                      style={{ color: areaColor, marginBottom: '4px' }}
+                      style={{ color: areaColor, marginBottom: '1px' }}
                     >
                       {pace.toFixed(1)}×
                     </p>
