@@ -160,7 +160,7 @@ export const AreaSummary = ({
           };
 
           return (
-            <div className="rounded-xl bg-card border border-border/20 px-4 py-3 mb-3 text-center">
+            <div className="rounded-xl bg-card border border-border/20 px-4 py-2.5 mb-3 text-center">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
                   Pace of Development
