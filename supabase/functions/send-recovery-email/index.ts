@@ -101,19 +101,19 @@ function buildAppSection(babyName: string): string {
       </td></tr>
       <tr><td align="center" style="padding:8px 16px 0;">
         <table cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:16px;">
-          <tr><td style="padding:4px 12px;font-size:12px;color:#374151;font-weight:600;">⭐ 4.7 · 2,000+ reviews</td></tr>
+          <tr><td style="padding:4px 12px;font-size:12px;color:#374151;font-weight:600;">⭐ 4.7 rating · 6.7k+ reviews</td></tr>
         </table>
       </td></tr>
       <tr><td style="padding:12px 16px 0;">
-        <a href="https://kinedu.com" style="display:block;background-color:#1B2B4B;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 0;border-radius:12px;text-align:center;">Start Free Trial — 7 Days Free</a>
+        <a href="https://app.kinedu.com/ia-signuppage/?swc=ia-report" style="display:block;background-color:#1B2B4B;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 0;border-radius:12px;text-align:center;">Start 7 Days Free Trial</a>
       </td></tr>
       <tr><td align="center" style="padding:4px 16px 0;">
         <p style="margin:0;font-size:11px;color:#9ca3af;">No commitment · Cancel anytime</p>
       </td></tr>
       <tr><td align="center" style="padding:10px 16px 16px;">
         <table cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="padding-right:6px;"><a href="https://apps.apple.com/app/kinedu"><img src="${appStoreUrl}" alt="App Store" width="110" style="width:110px;height:auto;display:block;" /></a></td>
-          <td><a href="https://play.google.com/store/apps/details?id=com.kinedu"><img src="${googlePlayUrl}" alt="Google Play" width="120" style="width:120px;height:auto;display:block;" /></a></td>
+          <td style="padding-right:6px;"><a href="https://apps.apple.com/mx/app/kinedu-desarrollo-del-beb%C3%A9/id741277284"><img src="${appStoreUrl}" alt="App Store" width="110" style="width:110px;height:auto;display:block;" /></a></td>
+          <td><a href="https://play.google.com/store/apps/details?id=com.kinedu.appkinedu&hl=es_MX"><img src="${googlePlayUrl}" alt="Google Play" width="120" style="width:120px;height:auto;display:block;" /></a></td>
         </tr></table>
       </td></tr>
     </table>
@@ -197,7 +197,7 @@ ${buildAppSection(babyName)}
 
 <!-- Footer -->
 <tr><td style="padding:12px 20px;border-top:1px solid #f3f4f6;">
-  <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">Trusted by 10M+ families · ⭐ 4.7 rating</p>
+  <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">Trusted by 10M+ families · ⭐ 4.7 rating · 6.7k+ reviews</p>
   <p style="margin:6px 0 0;font-size:10px;color:#bcc0c7;text-align:center;line-height:1.5;">
     This assessment is for informational purposes only and does not replace professional medical consultation.<br/>
     © 2026 Kinedu. All rights reserved.
@@ -278,8 +278,8 @@ Deno.serve(async (req) => {
       : `${babyName}'s report is almost ready`;
 
     const subText = is_second_email
-      ? `After 48 hours, you'll need to start over. Pick up where you left off — only <strong>2 more minutes</strong>.`
-      : `You started but didn't finish. Pick up where you left off — only <strong>2 more minutes</strong>.`;
+      ? `After 48 hours, you'll need to start over. Pick up where you left off — it only takes <strong>2 more minutes</strong>.`
+      : `You started the assessment but didn't finish. Pick up right where you left off — it only takes <strong>2 more minutes</strong>.`;
 
     const subject = is_second_email
       ? `Last chance — ${babyName}'s assessment expires soon`
