@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_sessions: {
+        Row: {
+          abandoned_at: string | null
+          assessment_id: string | null
+          baby_birthday: string | null
+          baby_id: string | null
+          baby_name: string | null
+          completed: boolean | null
+          completed_areas: Json | null
+          created_at: string | null
+          current_area_id: number | null
+          current_skill_index: number | null
+          email: string | null
+          email_sent: boolean | null
+          email_sent_at: string | null
+          id: string
+          milestone_answers: Json | null
+          progress_percentage: number | null
+          second_email_sent: boolean | null
+          selected_areas: Json | null
+          session_id: string
+        }
+        Insert: {
+          abandoned_at?: string | null
+          assessment_id?: string | null
+          baby_birthday?: string | null
+          baby_id?: string | null
+          baby_name?: string | null
+          completed?: boolean | null
+          completed_areas?: Json | null
+          created_at?: string | null
+          current_area_id?: number | null
+          current_skill_index?: number | null
+          email?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          milestone_answers?: Json | null
+          progress_percentage?: number | null
+          second_email_sent?: boolean | null
+          selected_areas?: Json | null
+          session_id: string
+        }
+        Update: {
+          abandoned_at?: string | null
+          assessment_id?: string | null
+          baby_birthday?: string | null
+          baby_id?: string | null
+          baby_name?: string | null
+          completed?: boolean | null
+          completed_areas?: Json | null
+          created_at?: string | null
+          current_area_id?: number | null
+          current_skill_index?: number | null
+          email?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          milestone_answers?: Json | null
+          progress_percentage?: number | null
+          second_email_sent?: boolean | null
+          selected_areas?: Json | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abandoned_sessions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abandoned_sessions_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_images: {
         Row: {
           activity_id: number
