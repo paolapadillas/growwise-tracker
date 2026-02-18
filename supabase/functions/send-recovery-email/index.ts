@@ -19,12 +19,20 @@ const AREA_ICON_URLS: Record<number, string> = {
   4: "https://ogyvfohbhwxwwxlwyjth.supabase.co/storage/v1/object/public/email-assets/Logo_Emotional_HD.png",
 };
 
+const AREA_COLORS: Record<number, string> = {
+  2: "#34A853", // Cognitive - green
+  1: "#4A90D9", // Physical - blue
+  3: "#F5A623", // Linguistic - orange
+  4: "#E91E8C", // Social - pink/magenta
+};
+
 function buildStepTracker(selectedAreas: number[], completedAreas: number[], currentAreaId: number | null): string {
   const steps = selectedAreas.map((areaId) => {
     const name = AREA_NAMES[areaId] || `Area ${areaId}`;
     const iconUrl = AREA_ICON_URLS[areaId] || "";
     const isCompleted = completedAreas.includes(areaId);
     const isCurrent = areaId === currentAreaId && !isCompleted;
+    const areaColor = AREA_COLORS[areaId] || "#34A853";
 
     if (isCompleted) {
       return `<td align="center" style="padding:0 4px;">
@@ -35,10 +43,10 @@ function buildStepTracker(selectedAreas: number[], completedAreas: number[], cur
         </td>`;
     } else if (isCurrent) {
       return `<td align="center" style="padding:0 4px;">
-          <div style="border:3px solid #34A853;border-radius:50%;padding:1px;display:inline-block;">
+          <div style="border:3px solid ${areaColor};border-radius:50%;padding:1px;display:inline-block;">
             <img src="${iconUrl}" width="36" height="36" alt="${name}" style="width:36px;height:36px;border-radius:50%;display:block;" />
           </div>
-          <div style="font-size:9px;color:#34A853;font-weight:700;margin-top:2px;">${name}</div>
+          <div style="font-size:9px;color:${areaColor};font-weight:700;margin-top:2px;">${name}</div>
         </td>`;
     } else {
       return `<td align="center" style="padding:0 4px;">
