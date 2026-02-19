@@ -1,45 +1,67 @@
 
 
-## Mejoras a la sección "Your Progress" del email
+# Fix: Incorrect Progress, Areas, and Skills in Assessment Breakdown
 
-Basandome en el screenshot de referencia, estos son los cambios necesarios en `supabase/functions/send-recovery-email/index.ts`:
+## Problem
 
-### Cambios en la tarjeta de progreso (lineas 182-201)
+When viewing Maria's assessment breakdown, three metrics are wrong:
+- **Areas**: Should show she selected 4 areas, but it's incorrect
+- **Progress**: Shows 63/63 (100%) but she abandoned the assessment
+- **Skills**: Shows 3/3 completed but should be X out of total assigned skills
 
-1. **Titulo "YOUR PROGRESS" a la izquierda + "XX% complete" a la derecha en verde** - Actualmente solo muestra "22% complete" en gris pequeño. Cambiar a un layout de dos columnas:
-   - Izquierda: "YOUR PROGRESS" en mayusculas, bold, gris oscuro, font-size 13px
-   - Derecha: "22% complete" en verde (#34A853), bold, italica, font-size 13px
+### Root Causes
 
-2. **Progress bar mas gruesa y verde solido** - Actualmente es de 4px. Cambiar a 6px de alto con bordes redondeados completos y color verde mas visible.
+1. **No `abandoned_session` record exists** for Maria's assessment -- the row was either never created or the insert failed silently. Without it, `selected_areas` is empty and `progress_percentage` is null.
+2. **Newborn exclusion bug (line 215)**: The code checks `ageMonths > 0` before querying total milestones, but Maria is age 0 (newborn). This means the query to get the real total assigned milestones never runs.
+3. **Fallback makes everything look complete**: When the query doesn't run, `totalExpectedMilestones` falls back to `responses.length` (63), making progress = 63/63 = 100%.
 
-3. **Iconos del step tracker mas grandes** - Aumentar de 28px a 40px para que coincidan con el screenshot donde los iconos son circulares y mas prominentes.
+## Solution
 
-4. **Ring verde para el area activa (Cognitive)** - En el screenshot, Cognitive tiene un ring verde grueso (no azul). Cambiar el borde de `#2563eb` (azul) a `#6DC185` (verde Cognitive) con 3px de grosor. Remover el blue dot de arriba.
+### 1. Fix the newborn exclusion (`ageMonths > 0` to `ageMonths >= 0`)
 
-5. **Areas inactivas con ring gris claro** - Las areas pendientes (Physical, Linguistic, Social) muestran un circulo gris claro alrededor del icono, no solo opacidad reducida. Agregar un borde gris (#e5e7eb) de 2px.
+Change line 215 condition so newborns (age 0) are not excluded from the total milestones query.
 
-6. **Label "Social" en vez de "Socio-Emotional"** - Acortar el nombre del area 4 para que quepa mejor.
+### 2. Infer `selectedAreas` from responses when `abandoned_session` is missing
 
-7. **Lineas conectoras mas largas** - Aumentar el ancho de las lineas de 16px a 24px para que se vean como en el screenshot.
+When no `abandoned_session` record exists, derive the selected areas from the distinct `area_id` values in `assessment_responses`. This won't capture unstarted areas (like Socio-Emotional for Maria), but it's a better fallback than nothing.
 
-### Detalle tecnico
+### 3. Query total milestones using the external DB with correct logic
 
-Archivo: `supabase/functions/send-recovery-email/index.ts`
+For the "assigned milestones" query, use the `skill_milestone` table (which maps milestones to skills for specific age ranges) instead of the `milestones` table with `lte('age', ageMonths)`. This will return the actual milestones that were presented to the user.
 
-**Seccion del header de progreso** (reemplazar lineas 184-186):
-- Cambiar de un solo `<p>` a una tabla de 2 columnas con "YOUR PROGRESS" (izq) y "XX% complete" (der, verde)
+Alternatively, since we know exactly which skills were assessed (from `assessment_responses`), query the external DB for all milestones belonging to those skills at that age to get the true total -- including milestones from areas the user selected but never reached.
 
-**Progress bar** (lineas 187-191):
-- Aumentar height de 4px a 6px
-- Border-radius completo en ambos lados
+### 4. Better fallback for areas selected count
 
-**Step tracker icons** (lineas 30-57):
-- Iconos de 28px a 40px
-- Current area: ring verde (#6DC185) de 3px, sin blue dot
-- Areas inactivas: ring gris (#e5e7eb) de 2px, opacity 0.5
-- Renombrar "Socio-Emotional" a "Social"
+When `abandoned_session` is missing:
+- Count distinct areas from responses as a minimum
+- If the assessment is incomplete (no `completed_at`), note in the UI that the area count may be partial
 
-**Lineas conectoras** (linea 65):
-- Width de 16px a 24px
+## Technical Changes
 
-Despues de los cambios, se resetea el flag de email y se envia un test.
+### File: `src/components/AssessmentBreakdownDialog.tsx`
+
+**Change 1** -- Fix newborn exclusion (line 215):
+```typescript
+// Before:
+if (ageMonths > 0 && selectedAreas.length > 0) {
+
+// After:
+if (selectedAreas.length > 0) {
+```
+
+**Change 2** -- Infer selected areas when no abandoned_session (after line 186):
+```typescript
+// When no abandoned_session, infer from responses
+let selectedAreas: number[] = (abandonedSession?.selected_areas as number[]) || [];
+if (selectedAreas.length === 0 && responses.length > 0) {
+  selectedAreas = [...new Set(responses.map(r => r.area_id).filter(Boolean) as number[])];
+}
+```
+
+**Change 3** -- Also query total milestones by skill_ids from responses as a second strategy when selected areas alone don't work. When `ageMonths === 0`, adjust the milestones query to use `eq('age', 0)` instead of `lte('age', 0)` (they're equivalent for 0, but being explicit).
+
+**Change 4** -- Fix progress percentage calculation to not use `progress_percentage` from abandoned_session blindly (it can be stale). Instead, always compute dynamically: `answered / totalExpectedMilestones * 100`.
+
+These changes ensure that even when the `abandoned_session` record is missing or incomplete, the breakdown dialog shows accurate metrics derived from the actual assessment responses and the external milestones database.
+
