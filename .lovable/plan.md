@@ -1,67 +1,112 @@
 
+# Integrar registro Kinedu desde el BabyForm
 
-# Fix: Incorrect Progress, Areas, and Skills in Assessment Breakdown
+## Resumen
 
-## Problem
+Crear una Edge Function proxy que registre usuarios en Kinedu QA cuando proporcionan nombre y email en el Step 3. Agregar columna `kinedu_registered` en la tabla `babies` para persistir el estado. Condicionar el CTA del Superwall en el Report a ese flag.
 
-When viewing Maria's assessment breakdown, three metrics are wrong:
-- **Areas**: Should show she selected 4 areas, but it's incorrect
-- **Progress**: Shows 63/63 (100%) but she abandoned the assessment
-- **Skills**: Shows 3/3 completed but should be X out of total assigned skills
+## Cambios
 
-### Root Causes
+### 1. Secreto: KINEDU_STATIC_TOKEN
 
-1. **No `abandoned_session` record exists** for Maria's assessment -- the row was either never created or the insert failed silently. Without it, `selected_areas` is empty and `progress_percentage` is null.
-2. **Newborn exclusion bug (line 215)**: The code checks `ageMonths > 0` before querying total milestones, but Maria is age 0 (newborn). This means the query to get the real total assigned milestones never runs.
-3. **Fallback makes everything look complete**: When the query doesn't run, `totalExpectedMilestones` falls back to `responses.length` (63), making progress = 63/63 = 100%.
+Almacenar el token estatico JWT como secreto del backend. Tambien agregar `KINEDU_API_BASE_URL` = `https://qa.kinedu.com/api/v6` para facilitar el switch a produccion.
 
-## Solution
+### 2. Migracion: agregar columna `kinedu_registered` a tabla `babies`
 
-### 1. Fix the newborn exclusion (`ageMonths > 0` to `ageMonths >= 0`)
-
-Change line 215 condition so newborns (age 0) are not excluded from the total milestones query.
-
-### 2. Infer `selectedAreas` from responses when `abandoned_session` is missing
-
-When no `abandoned_session` record exists, derive the selected areas from the distinct `area_id` values in `assessment_responses`. This won't capture unstarted areas (like Socio-Emotional for Maria), but it's a better fallback than nothing.
-
-### 3. Query total milestones using the external DB with correct logic
-
-For the "assigned milestones" query, use the `skill_milestone` table (which maps milestones to skills for specific age ranges) instead of the `milestones` table with `lte('age', ageMonths)`. This will return the actual milestones that were presented to the user.
-
-Alternatively, since we know exactly which skills were assessed (from `assessment_responses`), query the external DB for all milestones belonging to those skills at that age to get the true total -- including milestones from areas the user selected but never reached.
-
-### 4. Better fallback for areas selected count
-
-When `abandoned_session` is missing:
-- Count distinct areas from responses as a minimum
-- If the assessment is incomplete (no `completed_at`), note in the UI that the area count may be partial
-
-## Technical Changes
-
-### File: `src/components/AssessmentBreakdownDialog.tsx`
-
-**Change 1** -- Fix newborn exclusion (line 215):
-```typescript
-// Before:
-if (ageMonths > 0 && selectedAreas.length > 0) {
-
-// After:
-if (selectedAreas.length > 0) {
+```sql
+ALTER TABLE public.babies
+ADD COLUMN kinedu_registered BOOLEAN DEFAULT FALSE;
 ```
 
-**Change 2** -- Infer selected areas when no abandoned_session (after line 186):
-```typescript
-// When no abandoned_session, infer from responses
-let selectedAreas: number[] = (abandonedSession?.selected_areas as number[]) || [];
-if (selectedAreas.length === 0 && responses.length > 0) {
-  selectedAreas = [...new Set(responses.map(r => r.area_id).filter(Boolean) as number[])];
-}
+Se usa `babies` porque ya tiene el email y es la entidad central. Esto permite:
+- Consultar el flag desde el Report sin joins adicionales
+- Usarlo en la logica de emails de recuperacion (abandoned sessions)
+- Trackear tasa de registro en analytics
+
+### 3. Nueva Edge Function: `register-kinedu-user`
+
+**Archivo**: `supabase/functions/register-kinedu-user/index.ts`
+
+Logica:
+1. Recibe `{ name, email, baby_id }` del frontend
+2. Lee secretos `KINEDU_STATIC_TOKEN` y `KINEDU_API_BASE_URL`
+3. POST a `{base_url}/general_projects/create_session/create_auth_token`
+   - Intento 1: token como `Authorization: Bearer {token}`
+   - Si falla (401/403): Intento 2: token en el body
+4. Con el auth token temporal, POST a `{base_url}/general_projects/user_validation` con:
+   - `name`: nombre del padre/madre
+   - `lastname`: ""
+   - `email`: email del form
+   - `access_code`: ""
+   - `entry_name`: "Lovable_Assessment"
+5. Si exitoso: actualiza `babies.kinedu_registered = true` usando service role key
+6. Retorna `{ success: true }` o `{ success: false, error: "..." }`
+
+**Config** en `supabase/config.toml`:
+```
+[functions.register-kinedu-user]
+verify_jwt = false
 ```
 
-**Change 3** -- Also query total milestones by skill_ids from responses as a second strategy when selected areas alone don't work. When `ageMonths === 0`, adjust the milestones query to use `eq('age', 0)` instead of `lte('age', 0)` (they're equivalent for 0, but being explicit).
+### 4. Modificar `src/pages/BabyForm.tsx` (Step 3)
 
-**Change 4** -- Fix progress percentage calculation to not use `progress_percentage` from abandoned_session blindly (it can be stale). Instead, always compute dynamically: `answered / totalExpectedMilestones * 100`.
+Cambios en el Step 3:
+- Agregar campo "Your name" (nombre del padre/madre) arriba del email
+- Nuevo state: `parentName`
+- Ambos campos son opcionales (si no llenan, pueden hacer Skip)
 
-These changes ensure that even when the `abandoned_session` record is missing or incomplete, the breakdown dialog shows accurate metrics derived from the actual assessment responses and the external milestones database.
+Al hacer clic en "Continue" con email + nombre:
+- Mostrar loading state
+- Llamar a la Edge Function `register-kinedu-user` via `supabase.functions.invoke()`
+- Si hay error: mostrar toast informativo, continuar sin bloquear
+- El registro es no-bloqueante: si falla, el assessment sigue normalmente
 
+### 5. Modificar `src/pages/Report.tsx` y `MobileStickyCta.tsx`
+
+**Report.tsx**: Al cargar el baby, leer `baby.kinedu_registered`.
+
+**MobileStickyCta.tsx**: Recibir prop `kineduRegistered`:
+- Si `true`: el CTA dice "Start {babyName}'s Plan -- 7 Days Free" y linkea a `https://kinedu.superwall.app/ia-report`
+- Si `false`: mantener el comportamiento actual (link a `https://app.kinedu.com/ia-signuppage/?swc=ia-report`)
+
+No hay auto-redirect. El usuario ve sus resultados normalmente y decide si hace clic en el CTA.
+
+## Flujo del usuario
+
+```text
+Step 1: Baby name (sin cambios)
+Step 2: Birthday (sin cambios)
+Step 3: "Your name" + "Email"
+        --> Si llena ambos y hace Continue:
+            Edge Function registra en Kinedu (background)
+            babies.kinedu_registered = true
+        --> Si hace Skip:
+            No se registra, kinedu_registered = false
+Step 4: Area selection (sin cambios)
+Assessment...
+Report: CTA bottom apunta a Superwall si kinedu_registered=true
+```
+
+## Seccion tecnica
+
+### Edge Function: Estrategia de autenticacion con retry
+
+```text
+1. POST create_auth_token con Bearer header
+   |
+   +--> 200 OK? --> extraer token --> continuar
+   |
+   +--> 401/403? --> reintentar con token en body
+                     |
+                     +--> 200 OK? --> extraer token --> continuar
+                     |
+                     +--> Error? --> retornar error al frontend
+```
+
+### Manejo de errores
+- Email ya existe en Kinedu: toast "Account already exists", continuar flujo, marcar kinedu_registered=true
+- Error de red/API: toast generico, continuar flujo, kinedu_registered=false
+- El registro en Kinedu NUNCA bloquea el assessment
+
+### RLS
+La columna `kinedu_registered` hereda las politicas existentes de `babies` (SELECT para unclaimed o propias, UPDATE para propias o unclaimed). La Edge Function usa service role key para el update, asi que no hay problema de permisos.
