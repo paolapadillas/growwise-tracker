@@ -1,32 +1,61 @@
 
 
-## Plan: Accept environment-aware URLs from frontend in 3 edge functions
+## Fix Kinedu `user_validation` 401/406 Error
+
+### Problem
+The `create_auth_token` call succeeds (200 OK), but the subsequent `user_validation` call fails with `401 invalid_token` or `406 Incorrect user credentials`. The auth token is being extracted correctly from `response.token`, but the way it's sent to `user_validation` is being rejected.
+
+### Solution
+Update the edge function to try three different authentication strategies for `user_validation`, with comprehensive logging to identify which works:
 
 ### Changes
 
-**1. `register-kinedu-user` edge function**
-- Accept `kinedu_api_base_url` from request body
-- Use it as first priority: `kinedu_api_base_url || env.KINEDU_API_BASE_URL || fallback`
+**File: `supabase/functions/register-kinedu-user/index.ts`**
 
-**2. `send-report-email` edge function**
-- Accept `kinedu_signup_url` from request body
-- If provided, override the hardcoded `CTA_URL` (`https://app.kinedu.com/ia-signuppage/?swc=ia-report`)
+1. **Add full response logging for `create_auth_token`** -- log the entire response object so we can verify the token structure.
 
-**3. Frontend callers (BabyForm.tsx, Report.tsx)**
-- Pass `kinedu_api_base_url` when invoking `register-kinedu-user`
-- Pass `kinedu_signup_url` when invoking `send-report-email`
-- These values can come from environment variables (e.g. `VITE_KINEDU_API_BASE_URL`, `VITE_KINEDU_SIGNUP_URL`) or be hardcoded for now
+2. **Try 3 auth strategies for `user_validation` sequentially**:
+   - **Strategy A**: Raw token in `Authorization` header (current approach, but log more)
+   - **Strategy B**: `Bearer {token}` in `Authorization` header
+   - **Strategy C**: Token as a field in the request body (`auth_token` field)
 
-### File changes
+3. **Log the full response from each `user_validation` attempt** so we can see exactly what Kinedu returns for each strategy.
 
-| File | Change |
-|------|--------|
-| `supabase/functions/register-kinedu-user/index.ts` | Destructure `kinedu_api_base_url` from body; use as priority in `baseUrl` |
-| `supabase/functions/send-report-email/index.ts` | Destructure `kinedu_signup_url` from body; override `CTA_URL` if provided |
-| `src/pages/BabyForm.tsx` | Pass `kinedu_api_base_url` in the invoke body |
-| `src/pages/Report.tsx` | Pass `kinedu_signup_url` in both email send calls |
+4. **Accept the first successful response** (200, 201, 409, or 422 with "already exists").
 
-### Notes
-- `send-recovery-email` and `check-abandoned-assessments` are not modified since the user only mentioned 2 specific changes (register-kinedu-user and send-report-email based on the destructuring patterns described)
-- The `CTA_URL` in send-report-email is used in multiple places within the HTML template; overriding the variable at the top covers all usages
+### Technical Details
 
+```text
+Flow:
+  create_auth_token (raw static token, empty body)
+        |
+        v
+  Extract token from response.token
+        |
+        v
+  user_validation Strategy A: Authorization: {token}
+        |  (if 401/406)
+        v
+  user_validation Strategy B: Authorization: Bearer {token}
+        |  (if 401/406)
+        v
+  user_validation Strategy C: body includes auth_token field
+        |
+        v
+  Log all results, use first success
+```
+
+The body payload remains the same for all strategies (confirmed correct by Marijo):
+```json
+{
+  "name": "...",
+  "lastname": "",
+  "email": "...",
+  "access_code": "",
+  "entry_name": "Lovable_Assessment"
+}
+```
+
+For Strategy C, the body will additionally include `"auth_token": "{token}"`.
+
+Once we identify which strategy works from the logs, we can simplify the code to use only that approach.

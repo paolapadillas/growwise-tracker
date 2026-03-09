@@ -129,7 +129,7 @@ const Report = () => {
               const res = await fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-                body: JSON.stringify({ assessment_id: id, baby_id: assessmentData.babies?.id }),
+                body: JSON.stringify({ assessment_id: id, baby_id: assessmentData.babies?.id, kinedu_signup_url: import.meta.env.VITE_KINEDU_SIGNUP_URL || undefined }),
               });
               const data = await res.json();
               if (!res.ok && retryCount < 1) {
@@ -281,7 +281,7 @@ const Report = () => {
           const res = await fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            body: JSON.stringify({ assessment_id: id, baby_id: baby.id }),
+            body: JSON.stringify({ assessment_id: id, baby_id: baby.id, kinedu_signup_url: import.meta.env.VITE_KINEDU_SIGNUP_URL || undefined }),
           });
           const data = await res.json();
           if (!res.ok && retryCount < 1) {

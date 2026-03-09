@@ -139,7 +139,7 @@ function getSkillContext(skillName: string): string {
 }
 
 const LOGO_URL = 'https://ogyvfohbhwxwwxlwyjth.supabase.co/storage/v1/object/public/email-assets/logo-kinedu-blue.png'
-const CTA_URL = 'https://app.kinedu.com/ia-signuppage/?swc=ia-report'
+let CTA_URL = 'https://app.kinedu.com/ia-signuppage/?swc=ia-report'
 
 function buildEmailHtml(babyName: string, ageMonths: number, areas: AreaResult[], overallPace: number): string {
   // Find weakest skills (up to 4)
@@ -460,7 +460,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { assessment_id, baby_id } = await req.json()
+    const { assessment_id, baby_id, kinedu_signup_url } = await req.json()
+    if (kinedu_signup_url) { CTA_URL = kinedu_signup_url }
 
     if (!assessment_id || !baby_id) {
       console.log('SKIP: Missing assessment_id or baby_id', { assessment_id, baby_id })
