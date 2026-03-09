@@ -164,7 +164,7 @@ const BabyForm = () => {
       // If Kinedu registration was initiated, update baby_id for tracking
       if (parentEmail && parentName) {
         supabase.functions.invoke('register-kinedu-user', {
-          body: { name: parentName, email: parentEmail, baby_id: baby.id }
+          body: { name: parentName, email: parentEmail, baby_id: baby.id, kinedu_api_base_url: import.meta.env.VITE_KINEDU_API_BASE_URL || undefined }
         }).catch(err => console.warn('Kinedu baby_id update failed:', err));
       }
 
