@@ -26,6 +26,8 @@ const AREA_COLORS: Record<number, string> = {
   4: "#E91E8C", // Social - pink/magenta
 };
 
+let KINEDU_SIGNUP_URL = "https://app.kinedu.com/ia-signuppage/?swc=ia-report";
+
 function buildStepTracker(selectedAreas: number[], completedAreas: number[], currentAreaId: number | null): string {
   const steps = selectedAreas.map((areaId) => {
     const name = AREA_NAMES[areaId] || `Area ${areaId}`;
