@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${supabaseKey}`,
             },
-            body: JSON.stringify({ session_id: s.session_id, is_second_email: true }),
+            body: JSON.stringify({ session_id: s.session_id, is_second_email: true, kinedu_signup_url: kineduSignupUrl || undefined }),
           });
           secondCount++;
         } catch (err) {
