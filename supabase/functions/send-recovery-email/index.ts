@@ -251,7 +251,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { session_id, is_second_email } = await req.json();
+    const { session_id, is_second_email, kinedu_signup_url } = await req.json();
+    if (kinedu_signup_url) { KINEDU_SIGNUP_URL = kinedu_signup_url; }
     if (!session_id) {
       return new Response(JSON.stringify({ error: "session_id required" }), {
         status: 400,
