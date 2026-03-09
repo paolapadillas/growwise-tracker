@@ -26,6 +26,8 @@ const AREA_COLORS: Record<number, string> = {
   4: "#E91E8C", // Social - pink/magenta
 };
 
+let KINEDU_SIGNUP_URL = "https://app.kinedu.com/ia-signuppage/?swc=ia-report";
+
 function buildStepTracker(selectedAreas: number[], completedAreas: number[], currentAreaId: number | null): string {
   const steps = selectedAreas.map((areaId) => {
     const name = AREA_NAMES[areaId] || `Area ${areaId}`;
@@ -200,7 +202,7 @@ function buildEmailHtml(params: {
       </table>
     </td></tr>
     <tr><td style="padding:6px 16px 4px;">
-      <a href="https://app.kinedu.com/ia-signuppage/?swc=ia-report" style="display:block;background-color:#34A853;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 0;border-radius:10px;text-align:center;">
+      <a href="${KINEDU_SIGNUP_URL}" style="display:block;background-color:#34A853;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 0;border-radius:10px;text-align:center;">
         Start 7 Day Free Trial
       </a>
     </td></tr>
@@ -249,7 +251,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { session_id, is_second_email } = await req.json();
+    const { session_id, is_second_email, kinedu_signup_url } = await req.json();
+    if (kinedu_signup_url) { KINEDU_SIGNUP_URL = kinedu_signup_url; }
     if (!session_id) {
       return new Response(JSON.stringify({ error: "session_id required" }), {
         status: 400,
