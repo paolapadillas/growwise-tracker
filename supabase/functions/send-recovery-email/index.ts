@@ -26,7 +26,7 @@ const AREA_COLORS: Record<number, string> = {
   4: "#E91E8C", // Social - pink/magenta
 };
 
-let KINEDU_SIGNUP_URL = "https://app.kinedu.com/ia-signuppage/?swc=ia-report";
+let KINEDU_SIGNUP_URL = Deno.env.get('KINEDU_CTA_URL') || 'https://kinedu.superwall.app/ia-report';
 
 function buildStepTracker(selectedAreas: number[], completedAreas: number[], currentAreaId: number | null): string {
   const steps = selectedAreas.map((areaId) => {
