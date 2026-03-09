@@ -202,7 +202,7 @@ function buildEmailHtml(params: {
       </table>
     </td></tr>
     <tr><td style="padding:6px 16px 4px;">
-      <a href="https://app.kinedu.com/ia-signuppage/?swc=ia-report" style="display:block;background-color:#34A853;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 0;border-radius:10px;text-align:center;">
+      <a href="${KINEDU_SIGNUP_URL}" style="display:block;background-color:#34A853;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 0;border-radius:10px;text-align:center;">
         Start 7 Day Free Trial
       </a>
     </td></tr>
