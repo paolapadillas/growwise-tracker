@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const kineduSignupUrl = Deno.env.get("KINEDU_SIGNUP_URL") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // First pass: sessions idle > 30 min, first email not sent
@@ -34,7 +35,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${supabaseKey}`,
             },
-            body: JSON.stringify({ session_id: s.session_id }),
+            body: JSON.stringify({ session_id: s.session_id, kinedu_signup_url: kineduSignupUrl || undefined }),
           });
           firstCount++;
         } catch (err) {
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${supabaseKey}`,
             },
-            body: JSON.stringify({ session_id: s.session_id, is_second_email: true }),
+            body: JSON.stringify({ session_id: s.session_id, is_second_email: true, kinedu_signup_url: kineduSignupUrl || undefined }),
           });
           secondCount++;
         } catch (err) {
